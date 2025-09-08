@@ -1,0 +1,11 @@
+server:
+  port: 9090
+
+spring:
+  main:
+    web-application-type: servlet
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    ru.practicum: DEBUG
