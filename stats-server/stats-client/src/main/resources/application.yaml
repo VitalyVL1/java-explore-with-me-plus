@@ -1,6 +1,8 @@
 server:
   port: 9090
 
+stats-server.url: http://localhost:9091
+
 spring:
   main:
     web-application-type: servlet
