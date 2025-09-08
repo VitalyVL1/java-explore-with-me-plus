@@ -1,3 +1,5 @@
+*.DS_Store
+volumes/
 *.class
 *.log
 *.jar
