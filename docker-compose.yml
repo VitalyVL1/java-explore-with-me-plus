@@ -2,7 +2,7 @@ services:
   stats-server:
     build: ./stats-server/stats-service
     ports:
-      - "9090:9090"
+      - "9091:9090"
 
   stats-db:
     image: postgres:16.1
