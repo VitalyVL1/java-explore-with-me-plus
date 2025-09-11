@@ -9,9 +9,6 @@ import java.time.LocalDateTime;
 
 public record HitCreateDto(
         @NotBlank
-        String name,
-
-        @NotBlank
         String app,
 
         @NotBlank

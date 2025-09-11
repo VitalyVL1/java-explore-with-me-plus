@@ -9,6 +9,7 @@ import java.util.List;
 public record RequestStats(
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime start,
+
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         LocalDateTime end,
         List<String> uris,
