@@ -1,0 +1,7 @@
+stats:
+  service.url: http://localhost:9090
+  date_time.format: "yyyy-MM-dd HH:mm:ss"
+
+logging.level:
+  org.springframework.web.client: DEBUG
+  ru.practicum.client: DEBUG
