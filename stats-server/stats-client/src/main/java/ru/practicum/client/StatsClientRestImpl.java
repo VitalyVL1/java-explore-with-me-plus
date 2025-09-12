@@ -19,13 +19,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @Slf4j
 @Component
-public class StatClientRestImpl implements StatClient {
+public class StatsClientRestImpl implements StatsClient {
 
     private final String baseUrl;
     private final DateTimeFormatter dateTimeFormatter;
     private final RestClient restClient;
 
-    public StatClientRestImpl(
+    public StatsClientRestImpl(
             @Value("${stats.service.url}") String baseUrl,
             @Value("${stats.date_time.format}") String dateTamePattern
     ) {
@@ -58,9 +58,7 @@ public class StatClientRestImpl implements StatClient {
                     .path("/stats")
                     .queryParam("start", requestStats.start().format(dateTimeFormatter))
                     .queryParam("end", requestStats.end().format(dateTimeFormatter))
-                    .queryParam("unique", requestStats.unique() != null ?
-                            requestStats.unique() :
-                            false)
+                    .queryParam("unique", requestStats.unique())
                     .queryParamIfPresent("uris", Optional.ofNullable(requestStats.uris()))
                     .build()
                     .toUri();

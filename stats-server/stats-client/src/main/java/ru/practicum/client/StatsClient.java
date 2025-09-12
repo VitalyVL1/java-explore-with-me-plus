@@ -6,7 +6,7 @@ import ru.practicum.dto.ResponseStatsDto;
 
 import java.util.List;
 
-public interface StatClient {
+public interface StatsClient {
     void hit(HitCreateDto dto);
 
     List<ResponseStatsDto> get(RequestStats request);
