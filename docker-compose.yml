@@ -10,6 +10,12 @@ services:
     depends_on:
       stats-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9090/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 25s
 
   stats-db:
     image: postgres:16.1
@@ -27,7 +33,7 @@ services:
       interval: 5s
       retries: 10
 
-  ewm-service:
+  ewm-server:
     build: ./ewm
     ports:
       - "8080:8080"
@@ -38,6 +44,14 @@ services:
     depends_on:
       ewm-db:
         condition: service_healthy
+      stats-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9090/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 25s
 
   ewm-db:
     image: postgres:16.1
