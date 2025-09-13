@@ -59,4 +59,14 @@ public class GlobalExceptionHandler {
         log.warn("ValidationException: {}", e.getMessage());
         return Map.of("error", e.getMessage());
     }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Map<String, String> handleException(final Exception e) {
+        log.warn("Internal error: {}", e.getMessage(), e);
+        return Map.of(
+                "error", "Внутренняя ошибка сервера",
+                "message", "Произошла непредвиденная ошибка"
+        );
+    }
 }
