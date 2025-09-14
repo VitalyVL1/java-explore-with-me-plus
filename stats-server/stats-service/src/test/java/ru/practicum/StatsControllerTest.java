@@ -9,7 +9,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.controller.StatsController;
 import ru.practicum.dto.HitCreateDto;
-import ru.practicum.dto.RequestStats;
+import ru.practicum.dto.RequestStatsDto;
 import ru.practicum.dto.ResponseStatsDto;
 import ru.practicum.service.StatsService;
 
@@ -18,8 +18,10 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(StatsController.class)
 public class StatsControllerTest {
@@ -153,7 +155,7 @@ public class StatsControllerTest {
                 new ResponseStatsDto("ewm-main-service", "/events/2", 3L)
         );
 
-        when(statsService.getStats(any(RequestStats.class))).thenReturn(expectedStats);
+        when(statsService.getStats(any(RequestStatsDto.class))).thenReturn(expectedStats);
 
         mvc.perform(get("/stats")
                         .param("start", twoHoursAgo.toString())
@@ -169,7 +171,7 @@ public class StatsControllerTest {
                 .andExpect(jsonPath("$[1].uri").value("/events/2"))
                 .andExpect(jsonPath("$[1].hits").value(3));
 
-        verify(statsService, times(1)).getStats(any(RequestStats.class));
+        verify(statsService, times(1)).getStats(any(RequestStatsDto.class));
     }
 
     @Test
@@ -178,7 +180,7 @@ public class StatsControllerTest {
                 new ResponseStatsDto("ewm-main-service", "/events/1", 5L)
         );
 
-        when(statsService.getStats(any(RequestStats.class))).thenReturn(expectedStats);
+        when(statsService.getStats(any(RequestStatsDto.class))).thenReturn(expectedStats);
 
         mvc.perform(get("/stats")
                         .param("start", twoHoursAgo.toString())
@@ -190,7 +192,7 @@ public class StatsControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].uri").value("/events/1"));
 
-        verify(statsService, times(1)).getStats(any(RequestStats.class));
+        verify(statsService, times(1)).getStats(any(RequestStatsDto.class));
     }
 
     @Test
@@ -199,7 +201,7 @@ public class StatsControllerTest {
                 new ResponseStatsDto("ewm-main-service", "/events/1", 3L)
         );
 
-        when(statsService.getStats(any(RequestStats.class))).thenReturn(expectedStats);
+        when(statsService.getStats(any(RequestStatsDto.class))).thenReturn(expectedStats);
 
         mvc.perform(get("/stats")
                         .param("start", twoHoursAgo.toString())
@@ -208,12 +210,12 @@ public class StatsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].hits").value(3));
 
-        verify(statsService, times(1)).getStats(any(RequestStats.class));
+        verify(statsService, times(1)).getStats(any(RequestStatsDto.class));
     }
 
     @Test
     void getStats_shouldReturnEmptyList() throws Exception {
-        when(statsService.getStats(any(RequestStats.class))).thenReturn(List.of());
+        when(statsService.getStats(any(RequestStatsDto.class))).thenReturn(List.of());
 
         mvc.perform(get("/stats")
                         .param("start", twoHoursAgo.toString())
@@ -223,12 +225,12 @@ public class StatsControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(0));
 
-        verify(statsService, times(1)).getStats(any(RequestStats.class));
+        verify(statsService, times(1)).getStats(any(RequestStatsDto.class));
     }
 
     @Test
     void getStats_shouldUseDefaultUniqueValue() throws Exception {
-        when(statsService.getStats(any(RequestStats.class))).thenReturn(List.of());
+        when(statsService.getStats(any(RequestStatsDto.class))).thenReturn(List.of());
 
         mvc.perform(get("/stats")
                         .param("start", twoHoursAgo.toString())
@@ -272,7 +274,7 @@ public class StatsControllerTest {
 
     @Test
     void getStats_shouldHandleEmptyUrisList() throws Exception {
-        when(statsService.getStats(any(RequestStats.class))).thenReturn(List.of());
+        when(statsService.getStats(any(RequestStatsDto.class))).thenReturn(List.of());
 
         mvc.perform(get("/stats")
                         .param("start", twoHoursAgo.toString())
@@ -286,7 +288,7 @@ public class StatsControllerTest {
 
     @Test
     void getStats_shouldHandleNullUris() throws Exception {
-        when(statsService.getStats(any(RequestStats.class))).thenReturn(List.of());
+        when(statsService.getStats(any(RequestStatsDto.class))).thenReturn(List.of());
 
         mvc.perform(get("/stats")
                         .param("start", twoHoursAgo.toString())

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.HitCreateDto;
-import ru.practicum.dto.RequestStats;
+import ru.practicum.dto.RequestStatsDto;
 import ru.practicum.dto.ResponseStatsDto;
 import ru.practicum.model.mapper.StatDtoMapper;
 import ru.practicum.repository.StatsRepository;
@@ -24,7 +24,7 @@ public class StatsServiceImpl implements StatsService {
     }
 
     @Override
-    public List<ResponseStatsDto> getStats(RequestStats request) {
+    public List<ResponseStatsDto> getStats(RequestStatsDto request) {
         log.info("Запрос на получение статистики по посещениям с данными: {}", request);
 
         List<String> requestUris;

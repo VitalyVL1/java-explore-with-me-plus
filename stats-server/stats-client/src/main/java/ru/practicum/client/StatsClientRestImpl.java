@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.dto.HitCreateDto;
-import ru.practicum.dto.RequestStats;
+import ru.practicum.dto.RequestStatsDto;
 import ru.practicum.dto.ResponseStatsDto;
 
 import java.net.URI;
@@ -52,14 +52,14 @@ public class StatsClientRestImpl implements StatsClient {
     }
 
     @Override
-    public List<ResponseStatsDto> get(RequestStats requestStats) {
+    public List<ResponseStatsDto> get(RequestStatsDto requestStatsDto) {
         try {
             URI uri = UriComponentsBuilder.fromUri(URI.create(baseUrl))
                     .path("/stats")
-                    .queryParam("start", requestStats.start().format(dateTimeFormatter))
-                    .queryParam("end", requestStats.end().format(dateTimeFormatter))
-                    .queryParam("unique", requestStats.unique())
-                    .queryParamIfPresent("uris", Optional.ofNullable(requestStats.uris()))
+                    .queryParam("start", requestStatsDto.start().format(dateTimeFormatter))
+                    .queryParam("end", requestStatsDto.end().format(dateTimeFormatter))
+                    .queryParam("unique", requestStatsDto.unique())
+                    .queryParamIfPresent("uris", Optional.ofNullable(requestStatsDto.uris()))
                     .build()
                     .toUri();
 

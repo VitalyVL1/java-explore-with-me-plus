@@ -9,7 +9,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.TestPropertySource;
 import ru.practicum.dto.HitCreateDto;
-import ru.practicum.dto.RequestStats;
+import ru.practicum.dto.RequestStatsDto;
 import ru.practicum.dto.ResponseStatsDto;
 import ru.practicum.model.Stat;
 import ru.practicum.repository.StatsRepository;
@@ -18,7 +18,8 @@ import ru.practicum.service.StatsServiceImpl;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 @DataJpaTest
 @ComponentScan(basePackages = "ru.practicum")
@@ -60,7 +61,7 @@ public class StatsServiceImplTest {
 
     @Test
     void getStats_shouldReturnEmptyListWhenNoData() {
-        RequestStats request = new RequestStats(twoHoursAgo, now, null, false);
+        RequestStatsDto request = new RequestStatsDto(twoHoursAgo, now, null, false);
 
         List<ResponseStatsDto> result = statService.getStats(request);
 
@@ -70,7 +71,7 @@ public class StatsServiceImplTest {
     @Test
     void getStats_shouldReturnStatsForAllUris() {
         createTestData();
-        RequestStats request = new RequestStats(twoHoursAgo, now, null, false);
+        RequestStatsDto request = new RequestStatsDto(twoHoursAgo, now, null, false);
 
         List<ResponseStatsDto> result = statService.getStats(request);
 
@@ -86,7 +87,7 @@ public class StatsServiceImplTest {
     @Test
     void getStats_shouldReturnStatsForSpecificUris() {
         createTestData();
-        RequestStats request = new RequestStats(twoHoursAgo, now, List.of("/events/1"), false);
+        RequestStatsDto request = new RequestStatsDto(twoHoursAgo, now, List.of("/events/1"), false);
 
         List<ResponseStatsDto> result = statService.getStats(request);
 
@@ -99,7 +100,7 @@ public class StatsServiceImplTest {
     @Test
     void getStats_shouldReturnUniqueStats() {
         createTestData();
-        RequestStats request = new RequestStats(twoHoursAgo, now, null, true);
+        RequestStatsDto request = new RequestStatsDto(twoHoursAgo, now, null, true);
 
         List<ResponseStatsDto> result = statService.getStats(request);
 
@@ -115,7 +116,7 @@ public class StatsServiceImplTest {
     @Test
     void getStats_shouldReturnEmptyListForNonExistentUris() {
         createTestData();
-        RequestStats request = new RequestStats(twoHoursAgo, now, List.of("/nonexistent"), false);
+        RequestStatsDto request = new RequestStatsDto(twoHoursAgo, now, List.of("/nonexistent"), false);
 
         List<ResponseStatsDto> result = statService.getStats(request);
 
@@ -125,7 +126,7 @@ public class StatsServiceImplTest {
     @Test
     void getStats_shouldHandleEmptyUrisList() {
         createTestData();
-        RequestStats request = new RequestStats(twoHoursAgo, now, List.of(), false);
+        RequestStatsDto request = new RequestStatsDto(twoHoursAgo, now, List.of(), false);
 
         List<ResponseStatsDto> result = statService.getStats(request);
 
@@ -135,7 +136,7 @@ public class StatsServiceImplTest {
     @Test
     void getStats_shouldReturnStatsOrderedByHitsDesc() {
         createTestData();
-        RequestStats request = new RequestStats(twoHoursAgo, now, null, false);
+        RequestStatsDto request = new RequestStatsDto(twoHoursAgo, now, null, false);
 
         List<ResponseStatsDto> result = statService.getStats(request);
 
@@ -147,7 +148,7 @@ public class StatsServiceImplTest {
     @Test
     void getStats_shouldFilterByDateRangeCorrectly() {
         createTestData();
-        RequestStats request = new RequestStats(hourAgo.plusMinutes(9), hourAgo.plusMinutes(35), null, false);
+        RequestStatsDto request = new RequestStatsDto(hourAgo.plusMinutes(9), hourAgo.plusMinutes(35), null, false);
         System.out.println(request);
 
         List<ResponseStatsDto> result = statService.getStats(request);

@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
     public Map<String, String> handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException e) {
         log.warn("MethodArgumentTypeMismatchException: {}", e.getMessage());
         return Map.of("error", "Параметр '" + e.getName() + "' должен быть типа " +
-                (e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "число"));
+                               (e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "число"));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
