@@ -1,14 +1,12 @@
 package ru.practicum.service.user;
 
-import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ru.practicum.dto.user.UserCreateDto;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.dto.user.UserParam;
-import ru.practicum.dto.user.UserResponseDto;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.model.QUser;
 import ru.practicum.model.User;
@@ -20,50 +18,44 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final JPAQueryFactory queryFactory;
 
     @Override
-    public UserResponseDto save(UserCreateDto user) {
+    @Transactional
+    public UserDto save(UserDto user) {
         User savedUser = userRepository.save(UserMapper.mapToUser(user));
-        return UserMapper.mapToUserResponseDto(savedUser);
+        return UserMapper.mapToUserDto(savedUser);
     }
 
     @Override
-    public List<UserResponseDto> findAll(UserParam userParam) {
+    public List<UserDto> findAll(UserParam userParam) {
         QUser user = QUser.user;
 
-        BooleanExpression predicate = userParam.ids() != null && !userParam.ids().isEmpty()
-                ? user.id.in(userParam.ids())
-                : null;
+        JPAQuery<User> query = queryFactory.selectFrom(user);
 
-        if (userParam.from() != null && userParam.size() != null) {
-            Pageable pageable = PageRequest.of(
-                    userParam.from() / userParam.size(),
-                    userParam.size()
-            );
-
-            Page<User> userPage = predicate != null
-                    ? userRepository.findAll(predicate, pageable)
-                    : userRepository.findAll(pageable);
-
-            return userPage.getContent().stream()
-                    .map(UserMapper::mapToUserResponseDto)
-                    .collect(Collectors.toList());
+        if (userParam.ids() != null && !userParam.ids().isEmpty()) {
+            query.where(user.id.in(userParam.ids()));
         }
 
-        List<User> users = predicate != null
-                ? (List<User>) userRepository.findAll(predicate)
-                : userRepository.findAll();
+        query.orderBy(user.id.asc());
+
+        List<User> users = query
+                .offset(userParam.from())
+                .limit(userParam.size())
+                .fetch();
 
         return users.stream()
-                .map(UserMapper::mapToUserResponseDto)
+                .map(UserMapper::mapToUserDto)
                 .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional
     public void deleteById(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Нет такого пользователя " +
+        userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Нет такого пользователя " +
                 " id = " + userId));
         userRepository.deleteById(userId);
     }

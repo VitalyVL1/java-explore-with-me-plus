@@ -3,6 +3,7 @@ package ru.practicum.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequestMapping
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class StatsController {
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     private final StatsService statsService;
@@ -28,6 +30,7 @@ public class StatsController {
     public void saveHit(
             @RequestBody @Valid HitCreateDto createDto
     ) {
+        log.info("Запрос на сохранение информации о запросе к эндпоинту с данными: {}", createDto);
         statsService.saveHit(createDto);
     }
 
@@ -48,6 +51,8 @@ public class StatsController {
             @RequestParam(name = "unique", defaultValue = "false")
             Boolean unique
     ) {
+        log.info("Запрос на получение статистики по посещениям с данными: start = {}, end = {}, uris = {}, unique = {}"
+                , start, end, uris, unique);
         if (start != null && end != null && !end.isAfter(start)) {
             throw new ValidationException("Дата конца диапазона должна быть позже даты начала");
         }

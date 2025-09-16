@@ -28,6 +28,7 @@
         <postgresql.version>42.7.7</postgresql.version>
         <h2.version>2.3.232</h2.version>
         <lombok.version>1.18.30</lombok.version>
+        <querydsl.version>5.1.0</querydsl.version>
     </properties>
 
     <dependencyManagement>
@@ -51,6 +52,13 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>com.querydsl</groupId>
+                <artifactId>querydsl-jpa</artifactId>
+                <classifier>jakarta</classifier>
+                <version>${querydsl.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

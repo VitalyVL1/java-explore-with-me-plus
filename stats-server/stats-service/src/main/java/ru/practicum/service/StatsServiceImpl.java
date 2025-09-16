@@ -19,14 +19,11 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public void saveHit(HitCreateDto createDto) {
-        log.info("Запрос на сохранение информации о запросе к эндпоинту с данными: {}", createDto);
         statsRepository.save(StatDtoMapper.mapToModel(createDto));
     }
 
     @Override
     public List<ResponseStatsDto> getStats(RequestStatsDto request) {
-        log.info("Запрос на получение статистики по посещениям с данными: {}", request);
-
         List<String> requestUris;
         if (request.uris() == null || request.uris().isEmpty()) {
             requestUris = null;

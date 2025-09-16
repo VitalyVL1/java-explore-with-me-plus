@@ -2,6 +2,7 @@ package ru.practicum.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,9 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.dto.user.UserCreateDto;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.dto.user.UserParam;
-import ru.practicum.dto.user.UserResponseDto;
 import ru.practicum.service.user.UserService;
 
 import java.util.List;
@@ -31,19 +31,20 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/users")
-    public List<UserResponseDto> findAll(
+    public List<UserDto> findAll(
             @RequestParam(required = false) List<Long> ids,
-            @RequestParam(required = false) @Positive Integer from,
-            @RequestParam(required = false) @Positive Integer size
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size
     ) {
-        log.info("Method launched (findAll(List<Long> ids = {}, Integer from = {}, Integer size = {}))", ids, from, size);
+        log.info("Method launched (findAll(List<Long> ids = {}, Integer from = {}, Integer size = {}))", ids, from,
+                size);
         UserParam userParam = new UserParam(ids, from, size);
         return userService.findAll(userParam);
     }
 
     @PostMapping("/users")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponseDto save(@RequestBody @Valid UserCreateDto user) {
+    public UserDto save(@RequestBody @Valid UserDto user) {
         log.info("Method launched (save(UserCreateDto user = {}))", user);
         return userService.save(user);
     }
