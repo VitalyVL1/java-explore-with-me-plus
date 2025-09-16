@@ -1,5 +1,5 @@
 server:
-  port: 9090
+  port: 8080
 
 spring:
   jpa:
@@ -12,7 +12,7 @@ spring:
   database-platform: org.hibernate.dialect.PostgreSQLDialect
   sql.init.mode: always
   datasource:
-    url: jdbc:postgresql://localhost:5432/statsdb
+    url: jdbc:postgresql://localhost:5433/ewmdb
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: 12345
@@ -25,6 +25,10 @@ logging:
       transaction.interceptor: TRACE
       orm.jpa.JpaTransactionManager: DEBUG
 
+stats:
+  service.url: http://localhost:9090
+  date_time.format: "yyyy-MM-dd HH:mm:ss"
+
 ---
 spring:
   config.activate.on-profile: test
@@ -36,4 +40,4 @@ spring:
   jpa.database-platform: org.hibernate.dialect.H2Dialect
   h2.console:
     enabled: true
-    path: /stats-h2-console
+    path: /ewm-h2-console
