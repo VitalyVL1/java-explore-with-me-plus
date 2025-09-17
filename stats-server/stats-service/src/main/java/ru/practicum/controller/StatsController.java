@@ -51,8 +51,8 @@ public class StatsController {
             @RequestParam(name = "unique", defaultValue = "false")
             Boolean unique
     ) {
-        log.info("Запрос на получение статистики по посещениям с данными: start = {}, end = {}, uris = {}, unique = {}"
-                , start, end, uris, unique);
+        log.info("Запрос на получение статистики по посещениям с данными: start = {}, end = {}, uris = {}, unique = {}",
+                start, end, uris, unique);
         if (start != null && end != null && !end.isAfter(start)) {
             throw new ValidationException("Дата конца диапазона должна быть позже даты начала");
         }
