@@ -72,23 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryDto> findAll(CategoryParam params) {
-        int from = params.from();
-        int size = params.size();
-
-        int pageNumber = from / size;
-        int offsetInPage = from % size;
-
-        Pageable pageable = PageRequest.of(pageNumber, size + offsetInPage);
-        Page<Category> page = categoryRepository.findAll(pageable);
-
-        List<Category> categories = page.getContent();
-        if (offsetInPage > 0 && categories.size() > offsetInPage) {
-            categories = categories.subList(offsetInPage, categories.size());
-        }
-
-        if (categories.size() > size) {
-            categories = categories.subList(0, size);
-        }
+        List<Category> categories = categoryRepository.findAllWithOffset(params.from(), params.size());
 
         return categories.stream()
                 .map(CategoryMapper::mapToCategoryDto)
