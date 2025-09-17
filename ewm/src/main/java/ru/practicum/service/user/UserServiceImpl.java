@@ -6,8 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.user.UserDto;
 import ru.practicum.dto.user.UserParam;
 import ru.practicum.exception.NotFoundException;
-import ru.practicum.model.User;
-import ru.practicum.model.mapper.UserMapper;
+import ru.practicum.model.user.User;
+import ru.practicum.model.user.mapper.UserMapper;
 import ru.practicum.repository.UserRepository;
 
 import java.util.Comparator;
@@ -44,8 +44,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteById(Long userId) {
-        userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Нет такого пользователя " +
-                " id = " + userId));
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Нет такого пользователя id = " + userId);
+        }
         userRepository.deleteById(userId);
     }
 }

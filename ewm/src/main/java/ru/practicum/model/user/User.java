@@ -1,4 +1,4 @@
-package ru.practicum.model;
+package ru.practicum.model.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

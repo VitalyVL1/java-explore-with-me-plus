@@ -49,6 +49,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleNotFoundException(final AlreadyExistsException e) {
+        log.warn("409 {}", e.getMessage(), e);
+        return new ApiError("CONFLICT", "Нарушение ограничения уникальности", e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDataIntegrityViolationException(final DataIntegrityViolationException e) {
         log.warn("409 {}", e.getMessage(), e);
         return new ApiError("CONFLICT", "Нарушение ограничения уникальности", e.getMessage());
