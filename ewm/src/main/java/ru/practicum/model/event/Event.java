@@ -35,11 +35,11 @@ public class Event {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "initiator", nullable = false)
+    @JoinColumn(name = "initiator_id", nullable = false)
     private User initiator;
 
     @ManyToOne
-    @JoinColumn(name = "categories_id", nullable = false)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @Column(name = "title", length = 120, nullable = false)
