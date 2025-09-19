@@ -43,11 +43,11 @@ public class RequestServiceImpl implements RequestService {
         validateCreation(user, event);
 
         return RequestDtoMapper.mapRequestToDto(requestRepository.save(Request.builder()
-                        .createdOn(LocalDateTime.now())
-                        .event(event)
-                        .requester(user)
-                        .status(event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
-                        .build()));
+                .createdOn(LocalDateTime.now())
+                .event(event)
+                .requester(user)
+                .status(event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
+                .build()));
     }
 
     @Override

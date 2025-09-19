@@ -24,19 +24,19 @@ public class PublicEventController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<EventShortDto> getEvents(@Valid @ModelAttribute EventPublicParam params) {
-        log.info("Public: Method launched (findAllPublic({}))", params);
-        return eventService.findAllPublic(params);
+    public List<EventShortDto> findPublicEvents(@Valid @ModelAttribute EventPublicParam params) {
+        log.info("Public: Method launched (findPublicEvents({}))", params);
+        return eventService.findPublicEvents(params);
     }
 
     @GetMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto getEventById(
+    public EventFullDto findPublicEventById(
             @Positive(message = "eventId должен быть больше 0")
             @PathVariable
             Long eventId
     ) {
-        log.info("Public: Method launched (findByIdPublic({}))", eventId);
-        return eventService.findByIdPublic(eventId);
+        log.info("Public: Method launched (findPublicEventById({}))", eventId);
+        return eventService.findPublicEventById(eventId);
     }
 }

@@ -3,8 +3,6 @@ package ru.practicum.dto.event;
 import lombok.Builder;
 import ru.practicum.dto.category.CategoryDto;
 import ru.practicum.dto.user.UserShortDto;
-import ru.practicum.model.event.Location;
-import ru.practicum.model.event.State;
 
 import java.time.LocalDateTime;
 

@@ -1,13 +1,15 @@
 package ru.practicum.dto.event;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Size;
 import ru.practicum.model.event.Location;
 import ru.practicum.model.event.StateAction;
 
 import java.time.LocalDateTime;
 
-public record UpdateEventRequest(
+public record UpdateEventUserRequest(
         @Size(min = 20, max = 2000, message = "Аннотация должна быть не менее 20 и не более 2000 символов")
         String annotation,
 
@@ -29,4 +31,10 @@ public record UpdateEventRequest(
         @Size(min = 3, max = 120, message = "Название должно быть не менее 3 и не более 200 символов")
         String title
 ) {
+    @AssertTrue(message = "Пользователь может использовать только SEND_TO_REVIEW или CANCEL_REVIEW")
+    public boolean isValidStateAction() {
+        return stateAction == null ||
+               stateAction == StateAction.SEND_TO_REVIEW ||
+               stateAction == StateAction.CANCEL_REVIEW;
+    }
 }

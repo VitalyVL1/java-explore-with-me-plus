@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.event.*;
+import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.service.event.EventService;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class PrivateEventController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<EventShortDto> getEventsByUserId(
+    public List<EventShortDto> findUserEvents(
             @PathVariable
             @Positive(message = "Id должен быть больше 0")
             Long userId,
@@ -31,8 +32,8 @@ public class PrivateEventController {
             @ModelAttribute
             EventPrivateParam params
     ) {
-        log.info("Private: Method launched (findAllByUserId({}))", params);
-        return eventService.findAllByUserId(userId, params);
+        log.info("Private: Method launched (findUserEvents({}))", params);
+        return eventService.findUserEvents(userId, params);
     }
 
     @PostMapping
@@ -46,13 +47,13 @@ public class PrivateEventController {
             @RequestBody
             NewEventDto dto
     ) {
-        log.info("Private: Method launched (save({}, {}))", userId, dto);
-        return eventService.save(userId, dto);
+        log.info("Private: Method launched (createEvent({}, {}))", userId, dto);
+        return eventService.createEvent(userId, dto);
     }
 
     @GetMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto getEventByIdAndUserId(
+    public EventFullDto findUserEventById(
             @PathVariable
             @Positive(message = "userId должен быть больше 0")
             Long userId,
@@ -61,13 +62,13 @@ public class PrivateEventController {
             @Positive(message = "eventId должен быть больше 0")
             Long eventId
     ) {
-        log.info("Private: Method launched (updateEvent({}))", findByIdAndUserId);
-        return eventService.findByIdAndUserId(updateEventRequestParam);
+        log.info("Private: Method launched (findUserEventById({}, {}))", eventId, userId);
+        return eventService.findUserEventById(eventId, userId);
     }
 
     @PatchMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto updateEvent(
+    public EventFullDto updateUserEvent(
             @PathVariable
             @Positive(message = "userId должен быть больше 0")
             Long userId,
@@ -78,18 +79,18 @@ public class PrivateEventController {
 
             @Valid
             @RequestBody
-            UpdateEventRequest updateRequest
+            UpdateEventUserRequest updateRequest
     ) {
-        UpdateEventRequestParam updateEventRequestParam =
-                new UpdateEventRequestParam(userId, eventId, updateRequest);
-        log.info("Private: Method launched (updateEvent({}))", updateEventRequestParam);
-        return eventService.updateEvent(updateEventRequestParam);
+        UpdateEventUserRequestParam updateEventUserRequestParam =
+                new UpdateEventUserRequestParam(userId, eventId, updateRequest);
+        log.info("Private: Method launched (updateUserEvent({}))", updateEventUserRequestParam);
+        return eventService.updateUserEvent(updateEventUserRequestParam);
     }
 
 
     @GetMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
-    public ParticipationRequestDto getRequestsByEventIdAndUserId(
+    public List<ParticipationRequestDto> findEventRequests(
             @PathVariable
             @Positive(message = "userId должен быть больше 0")
             Long userId,
@@ -98,13 +99,13 @@ public class PrivateEventController {
             @Positive(message = "eventId должен быть больше 0")
             Long eventId
     ) {
-        log.info("Private: Method launched (updateEvent({}, {}))", eventId, userId);
-        return eventService.findAllRequestsByEventIdAndUserId(eventId, userId);
+        log.info("Private: Method launched (findEventRequests({}, {}))", eventId, userId);
+        return eventService.findEventRequests(eventId, userId);
     }
 
     @PatchMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
-    public EventRequestStatusUpdateResult updateEventRequest(
+    public List<EventRequestStatusUpdateResult> updateRequestStatus(
             @PathVariable
             @Positive(message = "userId должен быть больше 0")
             Long userId,
@@ -117,8 +118,9 @@ public class PrivateEventController {
             @RequestBody
             EventRequestStatusUpdateRequest updateRequest
     ) {
-        log.info("Private: Method launched (updateEvent({}, {}))", eventId, userId);
-        return eventService.findAllRequestsByEventIdAndUserId(eventId, userId);
+        EventRequestStatusUpdateRequestParam updateEventRequestParam =
+                new EventRequestStatusUpdateRequestParam(userId, eventId, updateRequest);
+        log.info("Private: Method launched (updateRequestStatus({}))", updateEventRequestParam);
+        return eventService.updateRequestStatus(updateEventRequestParam);
     }
-
 }

@@ -65,8 +65,4 @@ public class Event {
     @Column(name = "created_on", nullable = false)
     @Builder.Default
     private LocalDateTime createdOn = LocalDateTime.now();
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "state_action")
-    private StateAction stateAction;
 }
