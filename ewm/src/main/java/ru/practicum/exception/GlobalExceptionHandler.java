@@ -68,4 +68,13 @@ public class GlobalExceptionHandler {
         return new ApiError("INTERNAL_SERVER_ERROR", "На сервере произошла внутренняя ошибка",
                 e.getMessage());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleValidationException(final ValidationException e) {
+        log.warn("400 {}", e.getMessage(), e);
+
+        return new ApiError("BAD_REQUEST", "Переданные в метод контроллера данные, не проходят " +
+                "проверку на валидацию", e.getMessage());
+    }
 }
