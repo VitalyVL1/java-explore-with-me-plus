@@ -52,15 +52,22 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<EventShortDto> findPublicEvents(EventPublicParam params) {
         Specification<Event> spec = buildSpecification(params);
-        Sort sort = createSort(params.sort());
-        Pageable pageable = createPageable(params.from(), params.size(), sort);
+        Pageable pageable = PageRequest.of(params.from(), params.size());
 
         List<Event> events = eventRepository.findAll(spec, pageable).getContent();
+        setViewsAndConfirmedRequests(events);
 
-        events.forEach(this::setViewsAndConfirmedRequests);
+        Comparator<EventShortDto> comparator;
+
+        if (params.sort().equals(EventSort.VIEWS)) {
+            comparator = Comparator.comparing(EventShortDto::views).reversed();
+        } else {
+            comparator = Comparator.comparing(EventShortDto::eventDate);
+        }
 
         return events.stream()
                 .map(eventMapper::toShortDto)
+                .sorted(comparator)
                 .collect(Collectors.toList());
     }
 
@@ -74,7 +81,6 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
-    //TODO
     @Override
     public List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params) {
         if (!userRepository.existsById(userId)) {
@@ -84,7 +90,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(params.from(), params.size());
         List<Event> events = eventRepository.findAllByInitiator_Id(userId, pageable);
 
-        events.forEach(this::setViewsAndConfirmedRequests);
+        setViewsAndConfirmedRequests(events);
 
         return events.stream()
                 .map(eventMapper::toShortDto)
@@ -101,7 +107,7 @@ public class EventServiceImpl implements EventService {
                 () -> new NotFoundException(String.format("Category with id %d not found", dto.category())));
 
         Event event = eventRepository.save(eventMapper.toEntity(dto, user, category));
-
+        setConfirmedRequests(event);
         return eventMapper.toFullDto(event);
     }
 
@@ -280,10 +286,6 @@ public class EventServiceImpl implements EventService {
         };
     }
 
-    private Pageable createPageable(Integer from, Integer size, Sort sort) {
-        return PageRequest.of(from, size, sort);
-    }
-
     private Sort createSort(EventSort sort) {
         return switch (sort) {
             case EVENT_DATE -> Sort.by(Sort.Order.asc("eventDate"));
@@ -292,9 +294,9 @@ public class EventServiceImpl implements EventService {
         };
     }
 
-    public Map<Long, Long> getViewsStats(List<Long> eventIds) {
+    private Map<Long, Long> getViewsForEvents(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
-            return Map.of();
+            return Collections.emptyMap();
         }
 
         List<String> uris = eventIds.stream()
@@ -311,7 +313,7 @@ public class EventServiceImpl implements EventService {
                             (existing, replacement) -> existing
                     ));
         } catch (Exception e) {
-            return Map.of();
+            return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));
         }
     }
 
@@ -359,6 +361,22 @@ public class EventServiceImpl implements EventService {
     private void setViewsAndConfirmedRequests(Event event) {
         setViews(event);
         setConfirmedRequests(event);
+    }
+
+    private void setViewsAndConfirmedRequests(List<Event> events) {
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, Long> viewsMap = getViewsForEvents(eventIds);
+
+        Map<Long, Long> confirmedRequestsMap = requestRepository
+                .countConfirmedRequestsByEventIds(eventIds);
+
+        events.forEach(event -> {
+            event.setViews(viewsMap.getOrDefault(event.getId(), 0L));
+            event.setConfirmedRequests(confirmedRequestsMap.getOrDefault(event.getId(), 0L));
+        });
     }
 
     private void setViews(Event event) {
