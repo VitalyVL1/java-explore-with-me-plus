@@ -3,6 +3,7 @@ package ru.practicum.dto.event;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import ru.practicum.model.event.Location;
 import ru.practicum.model.event.StateAction;
@@ -24,6 +25,8 @@ public record UpdateEventAdminRequest(
 
         Location location,
         Boolean paid,
+
+        @PositiveOrZero(message = "Лимит участников должен быть неотрицательным")
         Integer participantLimit,
         Boolean requestModeration,
         StateAction stateAction,

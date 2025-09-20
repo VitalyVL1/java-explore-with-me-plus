@@ -1,9 +1,10 @@
 package ru.practicum.dto.event;
 
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 public record EventPrivateParam(
-        @Positive(message = "Параметр from должен быть больше нуля")
+        @PositiveOrZero(message = "Параметр from должен быть неотрицательным")
         Integer from,
         @Positive(message = "Параметр size должен быть больше нуля")
         Integer size

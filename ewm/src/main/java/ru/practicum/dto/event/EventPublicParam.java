@@ -2,6 +2,7 @@ package ru.practicum.dto.event;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.format.annotation.DateTimeFormat;
 import ru.practicum.model.event.EventSort;
 
@@ -21,8 +22,10 @@ public record EventPublicParam(
 
         Boolean onlyAvailable,
         EventSort sort,
-        @Positive(message = "Параметр from должен быть больше нуля")
+
+        @PositiveOrZero(message = "Параметр from должен быть неотрицательным")
         Integer from,
+
         @Positive(message = "Параметр size должен быть больше нуля")
         Integer size
 ) {

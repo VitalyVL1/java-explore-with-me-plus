@@ -107,7 +107,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto findUserEventById(Long eventId, Long userId) {
-        Event event = eventRepository.findByIdAndUserId(eventId, userId).orElseThrow(
+        Event event = eventRepository.findByIdAndInitiator_Id(eventId, userId).orElseThrow(
                 () -> new NotFoundException(String.format("Event with id %d by user %d not found", eventId, userId))
         );
         setViewsAndConfirmedRequests(event);
@@ -118,7 +118,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto updateUserEvent(UpdateEventUserRequestParam requestParam) {
         LocalDateTime now = LocalDateTime.now();
-        Event event = eventRepository.findByIdAndUserId(requestParam.eventId(), requestParam.userId())
+        Event event = eventRepository.findByIdAndInitiator_Id(requestParam.eventId(), requestParam.userId())
                 .orElseThrow(
                         () -> new NotFoundException(
                                 String.format(
@@ -156,17 +156,13 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventRequestStatusUpdateResult updateRequestStatus(EventRequestStatusUpdateRequestParam requestParam) {
         EventRequestStatusUpdateRequest updateRequest = requestParam.updateRequest();
-        Event event = eventRepository.findByIdAndUserId(requestParam.eventId(), requestParam.userId())
+        Event event = eventRepository.findByIdAndInitiator_Id(requestParam.eventId(), requestParam.userId())
                 .orElseThrow(
                         () -> new NotFoundException(
                                 String.format(
                                         "Event with id %d by user %d not found",
                                         requestParam.eventId(),
                                         requestParam.userId())));
-
-        if (!event.getState().equals(State.PUBLISHED)) {
-            throw new EventConflictException("Нельзя изменять статусы заявок для неопубликованного события");
-        }
 
         setConfirmedRequests(event);
 
@@ -292,6 +288,7 @@ public class EventServiceImpl implements EventService {
         return switch (sort) {
             case EVENT_DATE -> Sort.by(Sort.Order.asc("eventDate"));
             case VIEWS -> Sort.by(Sort.Order.desc("views"), Sort.Order.asc("eventDate"));
+            default -> Sort.unsorted();
         };
     }
 
