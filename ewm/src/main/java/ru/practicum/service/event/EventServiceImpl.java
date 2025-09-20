@@ -2,9 +2,6 @@ package ru.practicum.service.event;
 
 import io.micrometer.common.lang.Nullable;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,22 +49,24 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<EventShortDto> findPublicEvents(EventPublicParam params) {
         Specification<Event> spec = buildSpecification(params);
-        Pageable pageable = PageRequest.of(params.from(), params.size());
+        List<Event> events = eventRepository.findAll(spec);
 
-        List<Event> events = eventRepository.findAll(spec, pageable).getContent();
         setViewsAndConfirmedRequests(events);
 
-        Comparator<EventShortDto> comparator;
-
-        if (params.sort().equals(EventSort.VIEWS)) {
-            comparator = Comparator.comparing(EventShortDto::views).reversed();
-        } else {
-            comparator = Comparator.comparing(EventShortDto::eventDate);
+        if (params.onlyAvailable() != null && params.onlyAvailable()) {
+            events = events.stream()
+                    .filter(event -> event.getParticipantLimit() == 0 ||
+                                     event.getConfirmedRequests() < event.getParticipantLimit())
+                    .collect(Collectors.toList());
         }
+
+        Comparator<EventShortDto> comparator =createEventShortDtoComparator(params.sort());
 
         return events.stream()
                 .map(eventMapper::toShortDto)
                 .sorted(comparator)
+                .skip(params.from())
+                .limit(params.size())
                 .collect(Collectors.toList());
     }
 
@@ -81,19 +80,21 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
+    //TODO
     @Override
     public List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException(String.format("User with id %d not found", userId));
         }
 
-        Pageable pageable = PageRequest.of(params.from(), params.size());
-        List<Event> events = eventRepository.findAllByInitiator_Id(userId, pageable);
+        List<Event> events = eventRepository.findAllByInitiator_Id(userId);
 
         setViewsAndConfirmedRequests(events);
 
         return events.stream()
                 .map(eventMapper::toShortDto)
+                .skip(params.from())
+                .limit(params.size())
                 .collect(Collectors.toList());
     }
 
@@ -107,7 +108,7 @@ public class EventServiceImpl implements EventService {
                 () -> new NotFoundException(String.format("Category with id %d not found", dto.category())));
 
         Event event = eventRepository.save(eventMapper.toEntity(dto, user, category));
-        setConfirmedRequests(event);
+
         return eventMapper.toFullDto(event);
     }
 
@@ -224,7 +225,6 @@ public class EventServiceImpl implements EventService {
                         () -> createOptionalSpec(params.text(), this::createTextSpec),
                         () -> createOptionalSpec(params.categories(), this::createCategoriesSpec),
                         () -> createOptionalSpec(params.paid(), this::createPaidSpec),
-                        () -> createOptionalSpec(params.onlyAvailable(), this::createAvailabilitySpec),
                         () -> createDateSpec(params.rangeStart(), params.rangeEnd())
                 )
                 .map(Supplier::get)
@@ -265,13 +265,6 @@ public class EventServiceImpl implements EventService {
         return (root, query, cb) -> cb.equal(root.get("paid"), paid);
     }
 
-    private Specification<Event> createAvailabilitySpec(Boolean onlyAvailable) {
-        return (root, query, cb) -> cb.or(
-                cb.equal(root.get("participantLimit"), 0),
-                cb.greaterThan(root.get("participantLimit"), root.get("confirmedRequests"))
-        );
-    }
-
     private Specification<Event> createDateSpec(LocalDateTime rangeStart, LocalDateTime rangeEnd) {
         return (root, query, cb) -> {
             if (rangeStart != null && rangeEnd != null) {
@@ -283,14 +276,6 @@ public class EventServiceImpl implements EventService {
             } else {
                 return cb.greaterThan(root.get("eventDate"), LocalDateTime.now());
             }
-        };
-    }
-
-    private Sort createSort(EventSort sort) {
-        return switch (sort) {
-            case EVENT_DATE -> Sort.by(Sort.Order.asc("eventDate"));
-            case VIEWS -> Sort.by(Sort.Order.desc("views"), Sort.Order.asc("eventDate"));
-            default -> Sort.unsorted();
         };
     }
 
@@ -349,6 +334,14 @@ public class EventServiceImpl implements EventService {
         return confirmedRequests;
     }
 
+    private Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds) {
+        try {
+            return requestRepository.countConfirmedRequestsByEventIds(eventIds);
+        } catch (Exception e) {
+            return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));
+        }
+    }
+
     private RequestStatsDto createRequestStatsDto(List<String> uris, boolean unique) {
         return new RequestStatsDto(
                 LocalDateTime.now().minusYears(1),
@@ -364,14 +357,16 @@ public class EventServiceImpl implements EventService {
     }
 
     private void setViewsAndConfirmedRequests(List<Event> events) {
+        if (events == null || events.isEmpty()) {
+            return;
+        }
+
         List<Long> eventIds = events.stream()
                 .map(Event::getId)
                 .collect(Collectors.toList());
 
         Map<Long, Long> viewsMap = getViewsForEvents(eventIds);
-
-        Map<Long, Long> confirmedRequestsMap = requestRepository
-                .countConfirmedRequestsByEventIds(eventIds);
+        Map<Long, Long> confirmedRequestsMap = getConfirmedRequestsForEvents(eventIds);
 
         events.forEach(event -> {
             event.setViews(viewsMap.getOrDefault(event.getId(), 0L));
@@ -412,5 +407,19 @@ public class EventServiceImpl implements EventService {
                 case CANCEL_REVIEW -> event.setState(State.CANCELED);
             }
         }
+    }
+
+    private Comparator<EventShortDto> createEventShortDtoComparator(EventSort sort) {
+        Comparator<EventShortDto> comparator;
+
+        if (sort == null) {
+            comparator = (a, b) -> 0;
+        } else {
+            comparator = switch (sort) {
+                case VIEWS -> Comparator.comparing(EventShortDto::views).reversed();
+                case EVENT_DATE -> Comparator.comparing(EventShortDto::eventDate);
+            };
+        }
+        return comparator;
     }
 }

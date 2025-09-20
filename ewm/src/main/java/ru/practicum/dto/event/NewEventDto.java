@@ -38,5 +38,9 @@ public record NewEventDto(
 ) {
     @Builder(toBuilder = true)
     public NewEventDto {
+        paid = paid != null ? paid : false;
+        participantLimit = participantLimit != null ? participantLimit : 0;
+        requestModeration = requestModeration != null ? requestModeration : true;
     }
+
 }

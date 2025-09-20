@@ -3,6 +3,7 @@ package ru.practicum.service.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.dto.user.NewUserRequest;
 import ru.practicum.dto.user.UserDto;
 import ru.practicum.dto.user.UserParam;
 import ru.practicum.exception.NotFoundException;
@@ -23,7 +24,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDto save(UserDto user) {
+    public UserDto save(NewUserRequest user) {
         User savedUser = userRepository.save(UserMapper.mapToUser(user));
         return UserMapper.mapToUserDto(savedUser);
     }
