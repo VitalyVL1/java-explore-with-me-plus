@@ -65,4 +65,10 @@ public class Event {
     @Column(name = "created_on", nullable = false)
     @Builder.Default
     private LocalDateTime createdOn = LocalDateTime.now();
+
+    @Transient
+    private Long views;
+
+    @Transient
+    private Long confirmedRequests;
 }

@@ -1,5 +1,6 @@
 package ru.practicum.controller.event;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -24,19 +25,22 @@ public class PublicEventController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<EventShortDto> findPublicEvents(@Valid @ModelAttribute EventPublicParam params) {
+    public List<EventShortDto> findPublicEvents(
+            @Valid @ModelAttribute EventPublicParam params,
+            HttpServletRequest request) {
         log.info("Public: Method launched (findPublicEvents({}))", params);
         return eventService.findPublicEvents(params);
     }
 
-    @GetMapping("/{eventId}")
+    @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto findPublicEventById(
             @Positive(message = "eventId должен быть больше 0")
             @PathVariable
-            Long eventId
+            Long id,
+            HttpServletRequest request
     ) {
-        log.info("Public: Method launched (findPublicEventById({}))", eventId);
-        return eventService.findPublicEventById(eventId);
+        log.info("Public: Method launched (findPublicEventById({}))", id);
+        return eventService.findPublicEventById(id);
     }
 }
