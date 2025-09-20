@@ -105,7 +105,7 @@ public class PrivateEventController {
 
     @PatchMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
-    public List<EventRequestStatusUpdateResult> updateRequestStatus(
+    public EventRequestStatusUpdateResult updateRequestStatus(
             @PathVariable
             @Positive(message = "userId должен быть больше 0")
             Long userId,

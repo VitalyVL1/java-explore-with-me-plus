@@ -21,6 +21,8 @@ public interface EventMapper {
     @Mapping(target = "state", source = "state")
     @Mapping(target = "publishedOn", ignore = true)
     @Mapping(target = "createdOn", ignore = true)
+    @Mapping(target = "views", ignore = true)
+    @Mapping(target = "confirmedRequests", ignore = true)
     Event toEntity(NewEventDto dto, User initiator, Category category, State state);
 
     default Event toEntity(NewEventDto dto, User initiator, Category category) {
@@ -29,13 +31,9 @@ public interface EventMapper {
 
     @Mapping(target = "category", expression = "java(CategoryMapper.mapToCategoryDto(event.getCategory()))")
     @Mapping(target = "initiator", expression = "java(UserMapper.mapToUserShortDto(event.getInitiator()))")
-    @Mapping(target = "confirmedRequests", source = "confirmedRequests")
-    @Mapping(target = "views", source = "views")
-    EventFullDto toFullDto(Event event, Long confirmedRequests, Long views);
+    EventFullDto toFullDto(Event event);
 
     @Mapping(target = "category", expression = "java(CategoryMapper.mapToCategoryDto(event.getCategory()))")
     @Mapping(target = "initiator", expression = "java(UserMapper.mapToUserShortDto(event.getInitiator()))")
-    @Mapping(target = "confirmedRequests", source = "confirmedRequests")
-    @Mapping(target = "views", source = "views")
-    EventShortDto toShortDto(Event event, Long confirmedRequests, Long views);
+    EventShortDto toShortDto(Event event);
 }
