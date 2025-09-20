@@ -5,14 +5,18 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.client.StatsClient;
+import ru.practicum.dto.HitCreateDto;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventPublicParam;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.service.event.EventService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -22,6 +26,10 @@ import java.util.List;
 @Validated
 public class PublicEventController {
     private final EventService eventService;
+    private final StatsClient statsClient;
+
+    @Value("${stats.service.name}")
+    private String serviceName;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -29,7 +37,11 @@ public class PublicEventController {
             @Valid @ModelAttribute EventPublicParam params,
             HttpServletRequest request) {
         log.info("Public: Method launched (findPublicEvents({}))", params);
-        return eventService.findPublicEvents(params);
+        List<EventShortDto> events = eventService.findPublicEvents(params);
+        if (!events.isEmpty()) {
+            saveHit(request);
+        }
+        return events;
     }
 
     @GetMapping("/{id}")
@@ -41,6 +53,22 @@ public class PublicEventController {
             HttpServletRequest request
     ) {
         log.info("Public: Method launched (findPublicEventById({}))", id);
-        return eventService.findPublicEventById(id);
+        EventFullDto event = eventService.findPublicEventById(id);
+        saveHit(request);
+        return event;
+    }
+
+    private void saveHit(HttpServletRequest request) {
+        try {
+            statsClient.hit(HitCreateDto.builder()
+                    .app(serviceName)
+                    .uri(request.getRequestURI())
+                    .ip(request.getRemoteAddr())
+                    .timestamp(LocalDateTime.now())
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to save statistics for URI: {}", request.getRequestURI(), e);
+            // Не бросаем исключение дальше - статистика не должна ломать основной flow
+        }
     }
 }

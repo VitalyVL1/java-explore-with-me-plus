@@ -26,7 +26,9 @@ logging:
       orm.jpa.JpaTransactionManager: DEBUG
 
 stats:
-  service.url: http://localhost:9090
+  service:
+    url: http://localhost:9090
+    name: "ewm-main-service"
   date_time.format: "yyyy-MM-dd HH:mm:ss"
 
 ---
