@@ -1,7 +1,6 @@
 package ru.practicum.dto.event;
 
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Positive;
 import org.springframework.format.annotation.DateTimeFormat;
 import ru.practicum.model.event.EventSort;
@@ -15,7 +14,6 @@ public record EventPublicParam(
         Boolean paid,
 
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        @Future(message = "Поле rangeStart должно быть позже текущей даты и времени")
         LocalDateTime rangeStart,
 
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
