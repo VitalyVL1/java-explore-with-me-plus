@@ -4,12 +4,21 @@ import io.micrometer.common.lang.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.StatsClient;
 import ru.practicum.dto.RequestStatsDto;
 import ru.practicum.dto.ResponseStatsDto;
+import ru.practicum.dto.event.AdminEventParam;
+import ru.practicum.dto.event.EventFullDto;
+import ru.practicum.dto.event.UpdateEventAdminRequest;
+import ru.practicum.dto.request.ParticipationRequestDto;
+import ru.practicum.dto.request.RequestDtoMapper;
+import ru.practicum.exception.ConditionsNotMetException;
 import ru.practicum.dto.event.*;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.dto.request.RequestDtoMapper;
@@ -29,8 +38,15 @@ import ru.practicum.repository.RequestRepository;
 import ru.practicum.repository.UserRepository;
 import ru.practicum.util.OffsetBasedPageable;
 
+import org.springframework.data.domain.Pageable;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -46,7 +62,143 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final StatsClient statsClient;
+    private static final long MIN_HOURS_BEFORE_PUBLICATION_FOR_ADMIN = 1;
     private final EventMapper eventMapper;
+
+    @Override
+    public List<EventFullDto> findAll(AdminEventParam params) {
+        int from = params.from();
+        int size = params.size();
+
+        Page<Event> eventsPage = eventRepository.findAll(EventRepository.Predicate.adminFilters(params), getPageRequest(from, size));
+        List<Event> events = eventsPage.getContent();
+
+        if (from > 0 && events.size() > from) {
+            events = events.subList(from, events.size());
+        }
+
+        if (events.size() > size) {
+            events = events.subList(0, size);
+        }
+
+        Map<Long, Long> views = getViewsForEvents(events);
+
+        return events.stream()
+                .map(event -> EventMapper.mapToEventFullDto(event, null, views.get(event.getId())))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public EventFullDto update(long id, UpdateEventAdminRequest event) {
+        Event eventModel = eventRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Событие с id " + id + " не найдена"));
+
+        if (event.annotation() != null) {
+            eventModel.setAnnotation(event.annotation());
+        }
+
+        if (event.category() != null) {
+            Category category = categoryRepository.findById(event.category())
+                    .orElseThrow(() -> new NotFoundException("Category with id=" + event.category() + " not found for eventModel update."));
+            eventModel.setCategory(category);
+        }
+
+        if (event.description() != null) {
+            eventModel.setDescription(event.description());
+        }
+
+        if (event.eventDate() != null) {
+            eventModel.setEventDate(event.eventDate());
+        }
+
+        if (event.location() != null) {
+            eventModel.setLocation(event.location());
+        }
+
+        if (event.paid() != null) {
+            eventModel.setPaid(event.paid());
+        }
+
+        if (event.participantLimit() != null) {
+            eventModel.setParticipantLimit(event.participantLimit());
+        }
+
+        if (event.requestModeration() != null) {
+            eventModel.setRequestModeration(event.requestModeration());
+        }
+
+        if (event.title() != null) {
+            eventModel.setTitle(event.title());
+        }
+
+        if (event.stateAction() != null) {
+            switch (event.stateAction()) {
+                case PUBLISH_EVENT:
+                    if (eventModel.getState() != State.PENDING) {
+                        throw new ConditionsNotMetException("Событие можно публиковать, только если оно в состоянии ожидания публикации. Настоящее состояние: " + eventModel.getState());
+                    }
+                    if (eventModel.getEventDate().isBefore(LocalDateTime.now().plusHours(MIN_HOURS_BEFORE_PUBLICATION_FOR_ADMIN))) {
+                        throw new ConditionsNotMetException("Дата начала изменяемого события должна быть не ранее чем за час от даты публикации");
+                    }
+                    eventModel.setState(State.PUBLISHED);
+                    eventModel.setPublishedOn(LocalDateTime.now());
+                    break;
+                case REJECT_EVENT:
+                    if (eventModel.getState() == State.PUBLISHED) {
+                        throw new ConditionsNotMetException("Событие можно отклонить, только если оно еще не опубликовано");
+                    }
+                    eventModel.setState(State.CANCELED);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
+        Map<Long, Long> views = getViewsForEvents(List.of(eventModel));
+        //потом идет добавление confirmedRequests, пока что просто null
+        return EventMapper.mapToEventFullDto(eventRepository.save(eventModel), null, views.get(id));
+    }
+
+    private Map<Long, Long> getViewsForEvents(List<Event> events) {
+        if (events == null || events.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<String> uris = events.stream()
+                .map(event -> "/events/" + event.getId())
+                .distinct()
+                .toList();
+
+        LocalDateTime earliestCreation = events.stream()
+                .map(Event::getCreatedOn)
+                .filter(Objects::nonNull)
+                .min(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.MIN);
+
+        Map<Long, Long> viewsMap = new HashMap<>();
+        List<ResponseStatsDto> stats = statsClient.get(new RequestStatsDto(
+                earliestCreation,
+                LocalDateTime.now(),
+                uris,
+                true
+        ));
+
+        if (stats != null) {
+            for (ResponseStatsDto stat : stats) {
+                Long eventId = Long.parseLong(stat.uri().substring("/events/".length()));
+                viewsMap.put(eventId, stat.hits());
+            }
+        }
+
+        return viewsMap;
+    }
+
+    private Pageable getPageRequest(int from, int size) {
+        int pageSize = from + size;
+
+        return PageRequest.of(0, pageSize);
+    }
 
     //TODO
     @Override
@@ -83,6 +235,7 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
+    //TODO
     @Override
     public List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params) {
         if (!userRepository.existsById(userId)) {
