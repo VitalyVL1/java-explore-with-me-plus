@@ -1,5 +1,6 @@
 package ru.practicum.repository;
 
+import com.querydsl.core.Tuple;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -49,5 +50,5 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             WHERE r.event.id IN :eventIds AND r.status = 'CONFIRMED'
             GROUP BY r.event.id
             """)
-    Map<Long, Long> countConfirmedRequestsByEventIds(@Param("eventIds") List<Long> eventIds);
+    List<Tuple> countConfirmedRequestsByEventIds(@Param("eventIds") List<Long> eventIds);
 }

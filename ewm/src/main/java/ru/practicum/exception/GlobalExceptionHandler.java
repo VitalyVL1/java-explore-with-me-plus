@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleEventConflictException(final EventConflictException e) {
+    public ApiError handleConditionsNotMetException(final ConditionsNotMetException e) {
         log.warn("409 {}", e.getMessage(), e);
         return new ApiError("CONFLICT", "Нарушение ограничений", e.getMessage());
     }
