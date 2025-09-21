@@ -2,6 +2,8 @@ package ru.practicum.service.event;
 
 import io.micrometer.common.lang.Nullable;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ import ru.practicum.repository.CategoryRepository;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.RequestRepository;
 import ru.practicum.repository.UserRepository;
+import ru.practicum.util.OffsetBasedPageable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -60,7 +63,7 @@ public class EventServiceImpl implements EventService {
                     .collect(Collectors.toList());
         }
 
-        Comparator<EventShortDto> comparator =createEventShortDtoComparator(params.sort());
+        Comparator<EventShortDto> comparator = createEventShortDtoComparator(params.sort());
 
         return events.stream()
                 .map(eventMapper::toShortDto)
@@ -80,21 +83,18 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
-    //TODO
     @Override
     public List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException(String.format("User with id %d not found", userId));
         }
-
-        List<Event> events = eventRepository.findAllByInitiator_Id(userId);
+        Pageable pageable = new OffsetBasedPageable(params.from(), params.size(), Sort.by("id").descending());
+        List<Event> events = eventRepository.findAllByInitiator_Id(userId, pageable);
 
         setViewsAndConfirmedRequests(events);
 
         return events.stream()
                 .map(eventMapper::toShortDto)
-                .skip(params.from())
-                .limit(params.size())
                 .collect(Collectors.toList());
     }
 
