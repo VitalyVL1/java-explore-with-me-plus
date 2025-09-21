@@ -22,6 +22,7 @@ public interface EventService {
     EventFullDto createEvent(Long userId, NewEventDto dto);
 
     EventFullDto findUserEventById(Long eventId, Long userId);
+
     EventFullDto updateUserEvent(UpdateEventUserRequestParam requestParam);
 
     List<ParticipationRequestDto> findEventRequests(Long eventId, Long userId);

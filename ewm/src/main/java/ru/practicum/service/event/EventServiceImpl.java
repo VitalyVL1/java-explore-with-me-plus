@@ -48,8 +48,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final RequestRepository requestRepository;
@@ -208,7 +208,6 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
-    //TODO
     @Override
     public List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params) {
         if (!userRepository.existsById(userId)) {
