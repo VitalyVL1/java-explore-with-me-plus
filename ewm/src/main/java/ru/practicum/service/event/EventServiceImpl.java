@@ -4,7 +4,6 @@ import io.micrometer.common.lang.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,14 +19,13 @@ import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.dto.request.RequestDtoMapper;
 import ru.practicum.exception.ConditionsNotMetException;
 import ru.practicum.dto.event.*;
-import ru.practicum.dto.request.ParticipationRequestDto;
-import ru.practicum.dto.request.RequestDtoMapper;
 import ru.practicum.exception.EventConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.model.category.Category;
 import ru.practicum.model.event.Event;
 import ru.practicum.model.event.EventSort;
 import ru.practicum.model.event.State;
+import ru.practicum.model.event.mapper.EventFullDtoMapper;
 import ru.practicum.model.event.mapper.EventMapper;
 import ru.practicum.model.request.Request;
 import ru.practicum.model.request.RequestStatus;
@@ -38,15 +36,11 @@ import ru.practicum.repository.RequestRepository;
 import ru.practicum.repository.UserRepository;
 import ru.practicum.util.OffsetBasedPageable;
 
-import org.springframework.data.domain.Pageable;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -54,8 +48,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final RequestRepository requestRepository;
@@ -66,12 +60,16 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
 
     @Override
-    public List<EventFullDto> findAll(AdminEventParam params) {
+    public List<EventFullDto> findAllAdmin(AdminEventParam params) {
         int from = params.from();
         int size = params.size();
 
-        Page<Event> eventsPage = eventRepository.findAll(EventRepository.Predicate.adminFilters(params), getPageRequest(from, size));
+        Page<Event> eventsPage = eventRepository.findAll(EventRepository.Predicate.adminFilters(params), getPageRequest(from, size, null));
         List<Event> events = eventsPage.getContent();
+
+        if (eventsPage.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         if (from > 0 && events.size() > from) {
             events = events.subList(from, events.size());
@@ -81,16 +79,20 @@ public class EventServiceImpl implements EventService {
             events = events.subList(0, size);
         }
 
-        Map<Long, Long> views = getViewsForEvents(events);
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .toList();
+        Map<Long, Long> views = getViewsForEvents(eventIds);
+        Map<Long, Long> confirmedRequests = getConfirmedRequestsForEvents(eventIds);
 
         return events.stream()
-                .map(event -> EventMapper.mapToEventFullDto(event, null, views.get(event.getId())))
+                .map(event -> EventFullDtoMapper.mapToEventFullDto(event, confirmedRequests.get(event.getId()), views.get(event.getId())))
                 .toList();
     }
 
     @Override
     @Transactional
-    public EventFullDto update(long id, UpdateEventAdminRequest event) {
+    public EventFullDto updateAdminEvent(long id, UpdateEventAdminRequest event) {
         Event eventModel = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + id + " не найдена"));
 
@@ -155,49 +157,20 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-
-        Map<Long, Long> views = getViewsForEvents(List.of(eventModel));
-        //потом идет добавление confirmedRequests, пока что просто null
-        return EventMapper.mapToEventFullDto(eventRepository.save(eventModel), null, views.get(id));
+        Long views = getViews(eventModel.getId());
+        System.out.println(views);
+        Long confirmedRequests = getConfirmedRequests(eventModel.getId());
+        System.out.println(confirmedRequests);
+        return EventFullDtoMapper.mapToEventFullDto(eventRepository.save(eventModel), confirmedRequests, views);
     }
 
-    private Map<Long, Long> getViewsForEvents(List<Event> events) {
-        if (events == null || events.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        List<String> uris = events.stream()
-                .map(event -> "/events/" + event.getId())
-                .distinct()
-                .toList();
-
-        LocalDateTime earliestCreation = events.stream()
-                .map(Event::getCreatedOn)
-                .filter(Objects::nonNull)
-                .min(LocalDateTime::compareTo)
-                .orElse(LocalDateTime.MIN);
-
-        Map<Long, Long> viewsMap = new HashMap<>();
-        List<ResponseStatsDto> stats = statsClient.get(new RequestStatsDto(
-                earliestCreation,
-                LocalDateTime.now(),
-                uris,
-                true
-        ));
-
-        if (stats != null) {
-            for (ResponseStatsDto stat : stats) {
-                Long eventId = Long.parseLong(stat.uri().substring("/events/".length()));
-                viewsMap.put(eventId, stat.hits());
-            }
-        }
-
-        return viewsMap;
-    }
-
-    private Pageable getPageRequest(int from, int size) {
+    private Pageable getPageRequest(int from, int size, Sort sort) {
         int pageSize = from + size;
 
-        return PageRequest.of(0, pageSize);
+        if (sort == null) {
+            return PageRequest.of(0, pageSize);
+        }
+        return PageRequest.of(0, pageSize, sort);
     }
 
     //TODO

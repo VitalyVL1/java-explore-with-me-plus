@@ -72,7 +72,7 @@ public class AdminEventController {
                 users, states, categories, rangeStart, rangeEnd, from, size);
         AdminEventParam eventParam = new AdminEventParam(users, states, categories, rangeStart, rangeEnd, from, size);
 
-        return eventService.findAll(eventParam);
+        return eventService.findAllAdmin(eventParam);
     }
 
     @PatchMapping("/{eventId}")
@@ -82,6 +82,6 @@ public class AdminEventController {
             @Valid @RequestBody UpdateEventAdminRequest event
     ) {
         log.info("Admin: Method launched (delete(LLong eventId = {}, UpdateEventAdminRequest event = {}))", eventId, event);
-        return eventService.update(eventId, event);
+        return eventService.updateAdminEvent(eventId, event);
     }
 }

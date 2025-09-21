@@ -9,9 +9,9 @@ import ru.practicum.dto.request.ParticipationRequestDto;
 import java.util.List;
 
 public interface EventService {
-    List<EventFullDto> findAll(AdminEventParam params);
+    List<EventFullDto> findAllAdmin(AdminEventParam params);
 
-    EventFullDto update(long id, UpdateEventAdminRequest event);
+    EventFullDto updateAdminEvent(long id, UpdateEventAdminRequest event);
 
     List<EventShortDto> findPublicEvents(EventPublicParam params);
 
