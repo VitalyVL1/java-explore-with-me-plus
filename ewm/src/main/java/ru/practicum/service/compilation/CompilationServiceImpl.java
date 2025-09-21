@@ -8,6 +8,7 @@ import ru.practicum.dto.compilation.CompilationDtoMapper;
 import ru.practicum.dto.compilation.NewCompilationDto;
 import ru.practicum.dto.compilation.UpdateCompilationRequest;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.exception.ValidationException;
 import ru.practicum.model.compilation.Compilation;
 import ru.practicum.model.compilation.CompilationEvent;
 import ru.practicum.model.compilation.EventCompilationId;
@@ -35,9 +36,13 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto createCompilation(NewCompilationDto compilationDto) {
         Set<Event> events = getEvents(compilationDto.getEventIds());
 
+        if (compilationDto.getTitle() == null || compilationDto.getTitle().isBlank()) {
+            throw new ValidationException("Некорректное значение title");
+        }
+
         final Compilation compilation = compilationRepository.save(Compilation.builder()
                         .title(compilationDto.getTitle())
-                        .pinned(compilationDto.getPinned())
+                        .pinned(compilationDto.getPinned() != null ? compilationDto.getPinned() : false)
                         .build());
 
         saveCompilationEvents(compilation, events);
@@ -127,7 +132,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     private Set<Event> getEvents(Set<Long> eventIds) {
-        if (eventIds.isEmpty()) {
+        if (eventIds == null || eventIds.isEmpty()) {
             return Set.of();
         }
 

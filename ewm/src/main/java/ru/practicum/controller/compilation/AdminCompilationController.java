@@ -25,6 +25,7 @@ public class AdminCompilationController {
     private final CompilationService compilationService;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public CompilationDto createCompilation(@RequestBody @Valid NewCompilationDto compilationDto) {
         log.info("Admin: creating new compilation title={}", compilationDto.getTitle());
         return compilationService.createCompilation(compilationDto);
