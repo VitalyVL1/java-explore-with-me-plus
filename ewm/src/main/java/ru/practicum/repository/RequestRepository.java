@@ -1,5 +1,6 @@
 package ru.practicum.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -39,6 +40,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             """)
     long countByEventAndStatus(@Param("eventId") long eventId, @Param("status") RequestStatus status);
 
+    @EntityGraph(attributePaths = "event")
     List<Request> findByEvent_IdAndEvent_Initiator_Id(Long eventId, Long userId);
 
     @Query("""
