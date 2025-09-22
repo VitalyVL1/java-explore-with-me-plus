@@ -2,8 +2,14 @@ package ru.practicum.service.event;
 
 import ru.practicum.dto.event.AdminEventParam;
 import ru.practicum.dto.event.EventFullDto;
+import ru.practicum.dto.event.EventPrivateParam;
+import ru.practicum.dto.event.EventPublicParam;
+import ru.practicum.dto.event.EventRequestStatusUpdateRequestParam;
+import ru.practicum.dto.event.EventRequestStatusUpdateResult;
+import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.dto.event.NewEventDto;
 import ru.practicum.dto.event.UpdateEventAdminRequest;
-import ru.practicum.dto.event.*;
+import ru.practicum.dto.event.UpdateEventUserRequestParam;
 import ru.practicum.dto.request.ParticipationRequestDto;
 
 import java.util.List;

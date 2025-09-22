@@ -9,7 +9,6 @@ import ru.practicum.model.request.Request;
 import ru.practicum.model.request.RequestStatus;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {

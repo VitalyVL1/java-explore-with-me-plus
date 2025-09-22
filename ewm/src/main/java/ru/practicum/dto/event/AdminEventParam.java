@@ -7,7 +7,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import ru.practicum.model.event.State;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 
 public record AdminEventParam(

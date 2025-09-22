@@ -8,7 +8,18 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.StatsClient;
 import ru.practicum.dto.RequestStatsDto;
 import ru.practicum.dto.ResponseStatsDto;
-import ru.practicum.dto.event.*;
+import ru.practicum.dto.event.AdminEventParam;
+import ru.practicum.dto.event.EventFullDto;
+import ru.practicum.dto.event.EventPrivateParam;
+import ru.practicum.dto.event.EventPublicParam;
+import ru.practicum.dto.event.EventRequestStatusUpdateRequest;
+import ru.practicum.dto.event.EventRequestStatusUpdateRequestParam;
+import ru.practicum.dto.event.EventRequestStatusUpdateResult;
+import ru.practicum.dto.event.EventShortDto;
+import ru.practicum.dto.event.NewEventDto;
+import ru.practicum.dto.event.UpdateEventAdminRequest;
+import ru.practicum.dto.event.UpdateEventUserRequest;
+import ru.practicum.dto.event.UpdateEventUserRequestParam;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.dto.request.RequestDtoMapper;
 import ru.practicum.exception.ConditionsNotMetException;
@@ -29,7 +40,12 @@ import ru.practicum.util.OffsetBasedPageable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,8 +83,6 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto updateAdminEvent(long id, UpdateEventAdminRequest updateRequest) {
-        LocalDateTime now = LocalDateTime.now();
-
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Событие с id " + id + " не найдена"));
 

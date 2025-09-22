@@ -1,23 +1,24 @@
 package ru.practicum.controller.event;
 
 import jakarta.validation.Valid;
-import jakarta.validation.ValidationException;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.dto.event.AdminEventParam;
 import ru.practicum.dto.event.EventFullDto;
-import ru.practicum.dto.event.EventPublicParam;
 import ru.practicum.dto.event.UpdateEventAdminRequest;
-import ru.practicum.model.event.State;
 import ru.practicum.service.event.EventService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
