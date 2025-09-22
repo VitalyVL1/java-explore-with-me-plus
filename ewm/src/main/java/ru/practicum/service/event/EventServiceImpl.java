@@ -318,8 +318,8 @@ public class EventServiceImpl implements EventService {
         try {
             return requestRepository.countConfirmedRequestsByEventIds(eventIds).stream()
                     .collect(Collectors.toMap(
-                            tuple -> tuple.get(0, Long.class),
-                            tuple -> tuple.get(1, Long.class)
+                            e -> (Long) e[0],
+                            e -> (Long) e[1]
                     ));
         } catch (Exception e) {
             return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));

@@ -3,6 +3,7 @@ package ru.practicum.dto.compilation;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
+import ru.practicum.dto.event.EventShortDto;
 
 import java.util.Set;
 
@@ -13,5 +14,5 @@ public class CompilationDto {
     private String title;
     private boolean pinned;
     @JsonProperty("events")
-    private Set<Long> eventIds; // ToDo переделать когда будет EventShortDTO
+    private Set<EventShortDto> eventIds;
 }

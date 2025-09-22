@@ -46,7 +46,7 @@ public class RequestServiceImpl implements RequestService {
                 .createdOn(LocalDateTime.now())
                 .event(event)
                 .requester(user)
-                .status(event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
+                .status(event.getRequestModeration() && event.getParticipantLimit() > 0 ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
                 .build()));
     }
 
@@ -93,7 +93,7 @@ public class RequestServiceImpl implements RequestService {
             throw new AlreadyExistsException("Для пользователя " + user.getId() + " уже существует запрос на участие в событие " + event.getId());
         }
 
-        if (event.getParticipantLimit() !=0 && requestRepository.countByEventAndStatus(event.getId(), RequestStatus.CONFIRMED) >= event.getParticipantLimit()) {
+        if (event.getParticipantLimit() != 0 && requestRepository.countByEventAndStatus(event.getId(), RequestStatus.CONFIRMED) >= event.getParticipantLimit()) {
             throw new AlreadyExistsException("Достигнут лимит запросов на участие " + event.getId());
         }
     }
