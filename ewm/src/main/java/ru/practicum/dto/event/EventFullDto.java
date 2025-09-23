@@ -52,9 +52,7 @@ public record EventFullDto(
         @NotBlank
         String title,
 
-        Long views,
-
-        Boolean commentsEnabled
+        Long views
 ) {
     @Builder(toBuilder = true)
     public EventFullDto {

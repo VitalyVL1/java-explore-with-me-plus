@@ -3,6 +3,7 @@ package ru.practicum.repository;
 import com.querydsl.core.BooleanBuilder;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.dto.event.AdminEventParam;
 import ru.practicum.dto.event.EventPublicParam;
@@ -21,13 +22,12 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Фильтры для административного поиска событий
          */
         static BooleanBuilder adminFilters(AdminEventParam params) {
-            QEvent qEvent = QEvent.event;
             BooleanBuilder predicate = new BooleanBuilder();
 
-            addUsersPredicate(qEvent, predicate, params.users());
-            addStatesPredicate(qEvent, predicate, params.states());
-            addCategoriesPredicate(qEvent, predicate, params.categories());
-            addDatePredicate(qEvent, predicate, params.rangeStart(), params.rangeEnd());
+            addUsersPredicate(predicate, params.users());
+            addStatesPredicate(predicate, params.states());
+            addCategoriesPredicate(predicate, params.categories());
+            addDatePredicate(predicate, params.rangeStart(), params.rangeEnd());
 
             return predicate;
         }
@@ -36,14 +36,18 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Фильтры для общедоступного поиска событий
          */
         static BooleanBuilder publicFilters(EventPublicParam params) {
-            QEvent qEvent = QEvent.event;
+            return publicFilters(params, null);
+        }
+
+        static BooleanBuilder publicFilters(EventPublicParam params, List<Long> availableIds) {
             BooleanBuilder predicate = new BooleanBuilder();
 
-            addStatePredicate(qEvent, predicate, State.PUBLISHED);
-            addTextPredicate(qEvent, predicate, params.text());
-            addPaidPredicate(qEvent, predicate, params.paid());
-            addCategoriesPredicate(qEvent, predicate, params.categories());
-            addDatePredicate(qEvent, predicate, params.rangeStart(), params.rangeEnd());
+            addStatePredicate(predicate, State.PUBLISHED);
+            addTextPredicate(predicate, params.text());
+            addPaidPredicate(predicate, params.paid());
+            addCategoriesPredicate(predicate, params.categories());
+            addDatePredicate(predicate, params.rangeStart(), params.rangeEnd());
+            addOnlyAvailablePredicate(predicate, params.onlyAvailable(), availableIds);
 
             return predicate;
         }
@@ -52,12 +56,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Добавляет фильтр по пользователям (инициаторам событий)
          */
         private static void addUsersPredicate(
-                QEvent qEvent,
                 BooleanBuilder predicate,
                 Set<Long> users
         ) {
             if (users != null && !users.isEmpty()) {
-                predicate.and(qEvent.initiator.id.in(users));
+                predicate.and(QEvent.event.initiator.id.in(users));
             }
         }
 
@@ -65,12 +68,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Добавляет фильтр по множеству состояний событий
          */
         private static void addStatesPredicate(
-                QEvent qEvent,
                 BooleanBuilder predicate,
                 Set<State> states
         ) {
             if (states != null && !states.isEmpty()) {
-                predicate.and(qEvent.state.in(states));
+                predicate.and(QEvent.event.state.in(states));
             }
         }
 
@@ -78,12 +80,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Добавляет фильтр по одиночному состоянию события
          */
         private static void addStatePredicate(
-                QEvent qEvent,
                 BooleanBuilder predicate,
                 State state
         ) {
             if (state != null) {
-                predicate.and(qEvent.state.eq(state));
+                predicate.and(QEvent.event.state.eq(state));
             }
         }
 
@@ -91,14 +92,13 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Добавляет текстовый поиск в annotation и description
          */
         private static void addTextPredicate(
-                QEvent qEvent,
                 BooleanBuilder predicate,
                 String text
         ) {
             if (text != null && !text.isBlank()) {
                 String pattern = "%" + text.toLowerCase() + "%";
-                predicate.and(qEvent.annotation.lower().like(pattern)
-                        .or(qEvent.description.lower().like(pattern)));
+                predicate.and(QEvent.event.annotation.lower().like(pattern)
+                        .or(QEvent.event.description.lower().like(pattern)));
             }
         }
 
@@ -106,12 +106,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Добавляет фильтр по категориям
          */
         private static void addCategoriesPredicate(
-                QEvent qEvent,
                 BooleanBuilder predicate,
                 Set<Long> categories
         ) {
             if (categories != null && !categories.isEmpty()) {
-                predicate.and(qEvent.category.id.in(categories));
+                predicate.and(QEvent.event.category.id.in(categories));
             }
         }
 
@@ -119,12 +118,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Добавляет фильтр по платности события
          */
         private static void addPaidPredicate(
-                QEvent qEvent,
                 BooleanBuilder predicate,
                 Boolean paid
         ) {
             if (paid != null) {
-                predicate.and(qEvent.paid.eq(paid));
+                predicate.and(QEvent.event.paid.eq(paid));
             }
         }
 
@@ -132,21 +130,34 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
          * Добавляет фильтр по диапазону дат события
          */
         private static void addDatePredicate(
-                QEvent qEvent,
                 BooleanBuilder predicate,
                 LocalDateTime rangeStart,
                 LocalDateTime rangeEnd
         ) {
             if (rangeStart != null && rangeEnd != null) {
-                predicate.and(qEvent.eventDate.between(rangeStart, rangeEnd));
+                predicate.and(QEvent.event.eventDate.between(rangeStart, rangeEnd));
             } else if (rangeStart != null) {
-                predicate.and(qEvent.eventDate.goe(rangeStart));
+                predicate.and(QEvent.event.eventDate.goe(rangeStart));
             } else if (rangeEnd != null) {
-                predicate.and(qEvent.eventDate.loe(rangeEnd));
+                predicate.and(QEvent.event.eventDate.loe(rangeEnd));
             } else {
-                predicate.and(qEvent.eventDate.after(LocalDateTime.now()));
+                predicate.and(QEvent.event.eventDate.after(LocalDateTime.now()));
             }
         }
+
+        /**
+         * Добавляет фильтр по доступности события
+         */
+        private static void addOnlyAvailablePredicate(
+                BooleanBuilder predicate,
+                Boolean onlyAvailable,
+                List<Long> availableIds
+        ) {
+            if (onlyAvailable != null && onlyAvailable && availableIds != null && !availableIds.isEmpty()) {
+                predicate.and(QEvent.event.id.in(availableIds));
+            }
+        }
+
     }
 
     Optional<Event> findByIdAndState(Long eventId, State state);
@@ -154,4 +165,13 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
     Optional<Event> findByIdAndInitiator_Id(Long eventId, Long userId);
 
     List<Event> findAllByInitiator_Id(Long userId, Pageable pageable);
+
+    @Query(""" 
+            SELECT e.id
+            FROM Event e
+            LEFT JOIN Request r ON r.event.id = e.id AND r.status = 'CONFIRMED'
+            GROUP BY e.id, e.participantLimit
+            HAVING e.participantLimit = 0 OR COUNT(r) < e.participantLimit
+            """)
+    List<Long> findEventIdsWithAvailableSlots();
 }

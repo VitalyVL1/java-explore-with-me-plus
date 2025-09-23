@@ -1,5 +1,6 @@
 package ru.practicum.service.event;
 
+import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -8,18 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.StatsClient;
 import ru.practicum.dto.RequestStatsDto;
 import ru.practicum.dto.ResponseStatsDto;
-import ru.practicum.dto.event.AdminEventParam;
-import ru.practicum.dto.event.EventFullDto;
-import ru.practicum.dto.event.EventPrivateParam;
-import ru.practicum.dto.event.EventPublicParam;
-import ru.practicum.dto.event.EventRequestStatusUpdateRequest;
-import ru.practicum.dto.event.EventRequestStatusUpdateRequestParam;
-import ru.practicum.dto.event.EventRequestStatusUpdateResult;
-import ru.practicum.dto.event.EventShortDto;
-import ru.practicum.dto.event.NewEventDto;
-import ru.practicum.dto.event.UpdateEventAdminRequest;
-import ru.practicum.dto.event.UpdateEventUserRequest;
-import ru.practicum.dto.event.UpdateEventUserRequestParam;
+import ru.practicum.dto.event.*;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.dto.request.RequestDtoMapper;
 import ru.practicum.exception.ConditionsNotMetException;
@@ -40,12 +30,7 @@ import ru.practicum.util.OffsetBasedPageable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,7 +52,7 @@ public class EventServiceImpl implements EventService {
     public List<EventFullDto> findAllAdmin(AdminEventParam params) {
         int from = params.from();
         int size = params.size();
-        Pageable pageable = new OffsetBasedPageable(from, size * 2);
+        Pageable pageable = new OffsetBasedPageable(from, size);
 
         List<Event> events = eventRepository
                 .findAll(EventRepository.Predicate.adminFilters(params), pageable).getContent();
@@ -76,7 +61,6 @@ public class EventServiceImpl implements EventService {
 
         return events.stream()
                 .map(eventMapper::toFullDto)
-                .limit(size)
                 .toList();
     }
 
@@ -97,27 +81,30 @@ public class EventServiceImpl implements EventService {
         int from = params.from();
         int size = params.size();
         Sort defaultSort = Sort.by("eventDate");
-        Pageable pageable = new OffsetBasedPageable(from, size * 2, defaultSort);
+        Pageable pageable = new OffsetBasedPageable(from, size, defaultSort);
+        BooleanBuilder predicate;
+
+        if (params.onlyAvailable() != null && params.onlyAvailable()) {
+            List<Long> availableIds = eventRepository.findEventIdsWithAvailableSlots();
+            if (availableIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            predicate = EventRepository.Predicate.publicFilters(params, availableIds);
+        } else {
+            predicate = EventRepository.Predicate.publicFilters(params);
+        }
 
         List<Event> events = eventRepository
-                .findAll(EventRepository.Predicate.publicFilters(params), pageable)
+                .findAll(predicate, pageable)
                 .getContent();
 
         setViewsAndConfirmedRequests(events);
-
-        if (params.onlyAvailable() != null && params.onlyAvailable()) {
-            events = events.stream()
-                    .filter(event -> event.getParticipantLimit() == 0 ||
-                                     event.getConfirmedRequests() < event.getParticipantLimit())
-                    .collect(Collectors.toList());
-        }
 
         Comparator<EventShortDto> comparator = createEventShortDtoComparator(params.sort());
 
         return events.stream()
                 .map(eventMapper::toShortDto)
                 .sorted(comparator)
-                .limit(size)
                 .collect(Collectors.toList());
     }
 
