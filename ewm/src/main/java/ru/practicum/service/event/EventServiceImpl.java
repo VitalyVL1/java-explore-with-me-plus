@@ -246,6 +246,7 @@ public class EventServiceImpl implements EventService {
         );
     }
 
+    //TODO
     private Map<Long, Long> getViewsForEvents(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
             return Collections.emptyMap();
@@ -255,18 +256,14 @@ public class EventServiceImpl implements EventService {
                 .map(id -> "/events/" + id)
                 .collect(Collectors.toList());
 
-        try {
-            List<ResponseStatsDto> stats = statsClient.get(createRequestStatsDto(uris, true));
+        List<ResponseStatsDto> stats = statsClient.get(createRequestStatsDto(uris, true));
 
-            return stats.stream()
-                    .collect(Collectors.toMap(
-                            stat -> extractEventIdFromUri(stat.uri()),
-                            ResponseStatsDto::hits,
-                            (existing, replacement) -> existing
-                    ));
-        } catch (Exception e) {
-            return eventIds.stream().collect(Collectors.toMap(id -> id, id -> 0L));
-        }
+        return stats.stream()
+                .collect(Collectors.toMap(
+                        stat -> extractEventIdFromUri(stat.uri()),
+                        ResponseStatsDto::hits,
+                        (existing, replacement) -> existing
+                ));
     }
 
     private Long extractEventIdFromUri(String uri) {

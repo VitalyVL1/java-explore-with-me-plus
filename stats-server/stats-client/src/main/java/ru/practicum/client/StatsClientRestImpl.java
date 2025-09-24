@@ -12,6 +12,7 @@ import ru.practicum.dto.ResponseStatsDto;
 
 import java.net.URI;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,7 +72,7 @@ public class StatsClientRestImpl implements StatsClient {
                     });
         } catch (Exception e) {
             log.warn("Failed to get stats from stats service", e);
-            throw e;
+            return Collections.emptyList();
         }
     }
 }
