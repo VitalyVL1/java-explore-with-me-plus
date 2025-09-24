@@ -26,6 +26,7 @@ import ru.practicum.dto.event.UpdateEventUserRequest;
 import ru.practicum.dto.event.UpdateEventUserRequestParam;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.service.event.EventService;
+import ru.practicum.service.user.UserService;
 
 import java.util.List;
 
@@ -36,12 +37,14 @@ import java.util.List;
 @Validated
 public class PrivateEventController {
     private final EventService eventService;
+    private static final String USER_ID_VALIDATION_MESSAGE = "userId должен быть больше 0";
+    private static final String EVENT_ID_VALIDATION_MESSAGE = "eventId должен быть больше 0";
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<EventShortDto> findUserEvents(
             @PathVariable
-            @Positive(message = "Id должен быть больше 0")
+            @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
 
             @Valid
@@ -56,7 +59,7 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(
             @PathVariable
-            @Positive(message = "Id должен быть больше 0")
+            @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
 
             @Valid
@@ -71,11 +74,11 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto findUserEventById(
             @PathVariable
-            @Positive(message = "userId должен быть больше 0")
+            @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
 
             @PathVariable
-            @Positive(message = "eventId должен быть больше 0")
+            @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId
     ) {
         log.info("Private: Method launched (findUserEventById({}, {}))", eventId, userId);
@@ -86,11 +89,11 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto updateUserEvent(
             @PathVariable
-            @Positive(message = "userId должен быть больше 0")
+            @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
 
             @PathVariable
-            @Positive(message = "eventId должен быть больше 0")
+            @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId,
 
             @Valid
@@ -108,11 +111,11 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.OK)
     public List<ParticipationRequestDto> findEventRequests(
             @PathVariable
-            @Positive(message = "userId должен быть больше 0")
+            @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
 
             @PathVariable
-            @Positive(message = "eventId должен быть больше 0")
+            @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId
     ) {
         log.info("Private: Method launched (findEventRequests({}, {}))", eventId, userId);
@@ -123,11 +126,11 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.OK)
     public EventRequestStatusUpdateResult updateRequestStatus(
             @PathVariable
-            @Positive(message = "userId должен быть больше 0")
+            @Positive(message = USER_ID_VALIDATION_MESSAGE)
             Long userId,
 
             @PathVariable
-            @Positive(message = "eventId должен быть больше 0")
+            @Positive(message = EVENT_ID_VALIDATION_MESSAGE)
             Long eventId,
 
             @Valid
