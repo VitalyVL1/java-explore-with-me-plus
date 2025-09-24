@@ -10,7 +10,6 @@ import ru.practicum.dto.compilation.NewCompilationDto;
 import ru.practicum.dto.compilation.UpdateCompilationRequest;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.exception.NotFoundException;
-import ru.practicum.exception.ValidationException;
 import ru.practicum.model.compilation.Compilation;
 import ru.practicum.model.compilation.CompilationEvent;
 import ru.practicum.model.compilation.EventCompilationId;
@@ -20,8 +19,6 @@ import ru.practicum.repository.CompilationEventRepository;
 import ru.practicum.repository.CompilationRepository;
 import ru.practicum.repository.EventRepository;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,10 +36,6 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     public CompilationDto createCompilation(NewCompilationDto compilationDto) {
         Set<Event> events = getEvents(compilationDto.getEventIds());
-
-        if (compilationDto.getTitle() == null || compilationDto.getTitle().isBlank()) {
-            throw new ValidationException("Некорректное значение title");
-        }
 
         final Compilation compilation = compilationRepository.save(Compilation.builder()
                         .title(compilationDto.getTitle())
@@ -108,15 +101,10 @@ public class CompilationServiceImpl implements CompilationService {
                 .map(Compilation::getId)
                 .toList());
 
-        Map<Long, Set<Event>> eventsByCompId = new HashMap<>();
-        for (EventCompilationId ec : eventsList) {
-            if (!eventsByCompId.containsKey(ec.compilationId())) {
-                eventsByCompId.put(ec.compilationId(), new HashSet<>());
-            }
-            eventsByCompId.get(ec.compilationId()).add(ec.event());
-        }
-
-        return eventsByCompId;
+        return eventsList.stream()
+                .collect(Collectors.groupingBy(
+                        EventCompilationId::compilationId,
+                        Collectors.mapping(EventCompilationId::event, Collectors.toSet())));
     }
 
     @Transactional

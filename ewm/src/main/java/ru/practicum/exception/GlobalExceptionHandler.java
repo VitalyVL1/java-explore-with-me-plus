@@ -47,16 +47,9 @@ public class GlobalExceptionHandler {
         return new ApiError("NOT_FOUND", "Обращение к несуществующему ресурсу", e.getMessage());
     }
 
-    @ExceptionHandler
+    @ExceptionHandler({AlreadyExistsException.class, DataIntegrityViolationException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleAlreadyExistsException(final AlreadyExistsException e) {
-        log.warn("409 {}", e.getMessage(), e);
-        return new ApiError("CONFLICT", "Нарушение ограничения уникальности", e.getMessage());
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleDataIntegrityViolationException(final DataIntegrityViolationException e) {
+    public ApiError handleIntegrityException(final Exception e) {
         log.warn("409 {}", e.getMessage(), e);
         return new ApiError("CONFLICT", "Нарушение ограничения уникальности", e.getMessage());
     }
