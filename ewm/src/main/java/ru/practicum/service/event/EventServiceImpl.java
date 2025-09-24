@@ -246,7 +246,6 @@ public class EventServiceImpl implements EventService {
         );
     }
 
-    //TODO
     private Map<Long, Long> getViewsForEvents(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
             return Collections.emptyMap();
@@ -288,14 +287,11 @@ public class EventServiceImpl implements EventService {
     }
 
     private Long getConfirmedRequests(Long eventId) {
-        Long confirmedRequests = 0L;
-        try {
-            confirmedRequests = requestRepository
-                    .countByEventAndStatus(eventId, RequestStatus.CONFIRMED);
-        } catch (Exception e) {
-            return confirmedRequests;
+        if (eventId == null) {
+            return 0L;
         }
-        return confirmedRequests;
+        return requestRepository
+                .countByEventAndStatus(eventId, RequestStatus.CONFIRMED);
     }
 
     private Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds) {
