@@ -37,7 +37,7 @@ public record UpdateEventUserRequest(
         String title
 ) {
     public UpdateEventUserRequest {
-        stateAction = stateAction != null? stateAction: StateAction.NO_ACTION;
+        stateAction = stateAction != null ? stateAction : StateAction.NO_ACTION;
     }
 
     @AssertTrue(message = "Пользователь может использовать только SEND_TO_REVIEW или CANCEL_REVIEW")

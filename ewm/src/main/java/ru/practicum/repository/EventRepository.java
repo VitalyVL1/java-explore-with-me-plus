@@ -166,7 +166,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
 
     List<Event> findAllByInitiator_Id(Long userId, Pageable pageable);
 
-    @Query(""" 
+    @Query("""
             SELECT e.id
             FROM Event e
             LEFT JOIN Request r ON r.event.id = e.id AND r.status = 'CONFIRMED'
