@@ -26,7 +26,6 @@ import ru.practicum.dto.event.UpdateEventUserRequest;
 import ru.practicum.dto.event.UpdateEventUserRequestParam;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.service.event.EventService;
-import ru.practicum.service.user.UserService;
 
 import java.util.List;
 
