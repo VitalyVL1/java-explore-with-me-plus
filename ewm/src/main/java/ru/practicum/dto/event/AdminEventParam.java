@@ -9,15 +9,17 @@ import ru.practicum.model.event.State;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 public record AdminEventParam(
         Set<Long> users,
         Set<State> states,
         Set<Long> categories,
 
-        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @DateTimeFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime rangeStart,
 
-        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @DateTimeFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime rangeEnd,
 
         @PositiveOrZero(message = "Параметр from должен быть неотрицательным")

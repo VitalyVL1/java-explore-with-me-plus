@@ -7,12 +7,14 @@ import ru.practicum.dto.user.UserShortDto;
 
 import java.time.LocalDateTime;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 public record EventShortDto(
         String annotation,
         CategoryDto category,
         Long confirmedRequests,
 
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime eventDate,
         Long id,
         UserShortDto initiator,

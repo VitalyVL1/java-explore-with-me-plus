@@ -11,6 +11,8 @@ import ru.practicum.model.event.Location;
 
 import java.time.LocalDateTime;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 public record NewEventDto(
         @NotBlank(message = "Аннотация не может быть пустой")
         @Size(min = 20, max = 2000, message = "Аннотация должна быть не менее 20 и не более 2000 символов")
@@ -24,7 +26,7 @@ public record NewEventDto(
         String description,
 
         @NotNull(message = "Дата события должна быть указана")
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(pattern = DATE_TIME_PATTERN)
         @Future(message = "Дата события должна быть в будущем")
         LocalDateTime eventDate,
 

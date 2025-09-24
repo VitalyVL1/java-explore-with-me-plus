@@ -9,15 +9,17 @@ import ru.practicum.model.event.EventSort;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 public record EventPublicParam(
         String text,
         Set<Long> categories,
         Boolean paid,
 
-        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @DateTimeFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime rangeStart,
 
-        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @DateTimeFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime rangeEnd,
 
         Boolean onlyAvailable,

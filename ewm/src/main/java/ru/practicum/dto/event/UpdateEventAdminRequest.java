@@ -8,6 +8,8 @@ import ru.practicum.model.event.Location;
 
 import java.time.LocalDateTime;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 public record UpdateEventAdminRequest(
         @Size(min = 20, max = 2000, message = "Длина аннотации должна быть от 20 до 2000 символов")
         String annotation,
@@ -17,7 +19,7 @@ public record UpdateEventAdminRequest(
         @Size(min = 20, max = 7000, message = "Длина описания должна быть от 20 до 7000 символов")
         String description,
 
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(pattern = DATE_TIME_PATTERN)
         @Future(message = "Дата начала события должна быть в будущем")
         LocalDateTime eventDate,
 

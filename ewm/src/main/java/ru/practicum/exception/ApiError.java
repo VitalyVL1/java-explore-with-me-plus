@@ -6,12 +6,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ApiError(
         String status,
         String reason,
         String message,
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime timestamp,
         List<String> errors
 ) {

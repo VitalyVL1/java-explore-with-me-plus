@@ -11,6 +11,8 @@ import ru.practicum.model.event.State;
 
 import java.time.LocalDateTime;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 public record EventFullDto(
         Long id,
 
@@ -22,13 +24,13 @@ public record EventFullDto(
 
         Long confirmedRequests,
 
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime createdOn,
 
         String description,
 
         @NotNull
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime eventDate,
 
         @NotNull
@@ -42,7 +44,7 @@ public record EventFullDto(
 
         Integer participantLimit,
 
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(pattern = DATE_TIME_PATTERN)
         LocalDateTime publishedOn,
 
         Boolean requestModeration,

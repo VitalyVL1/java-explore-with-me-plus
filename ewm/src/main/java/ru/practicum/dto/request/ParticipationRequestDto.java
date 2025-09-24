@@ -8,12 +8,14 @@ import ru.practicum.model.request.RequestStatus;
 
 import java.time.LocalDateTime;
 
+import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
+
 @Data
 @Builder
 public class ParticipationRequestDto {
     private Long id;
     private RequestStatus status;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = DATE_TIME_PATTERN)
     private LocalDateTime created;
     @JsonProperty("event")
     private Long eventId;
