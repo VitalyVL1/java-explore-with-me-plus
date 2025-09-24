@@ -36,9 +36,13 @@ public record UpdateEventUserRequest(
         @Size(min = 3, max = 120, message = "Название должно быть не менее 3 и не более 200 символов")
         String title
 ) {
+    public UpdateEventUserRequest {
+        stateAction = stateAction != null? stateAction: StateAction.NO_ACTION;
+    }
+
     @AssertTrue(message = "Пользователь может использовать только SEND_TO_REVIEW или CANCEL_REVIEW")
     public boolean isValidStateAction() {
-        return stateAction == null ||
+        return stateAction == StateAction.NO_ACTION ||
                stateAction == StateAction.SEND_TO_REVIEW ||
                stateAction == StateAction.CANCEL_REVIEW;
     }
