@@ -1,0 +1,82 @@
+package ru.practicum.service.comment;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.dto.comment.CommentDto;
+import ru.practicum.dto.comment.NewCommentDto;
+import ru.practicum.dto.comment.UpdateCommentDto;
+import ru.practicum.exception.AccessDeniedException;
+import ru.practicum.exception.NotFoundException;
+import ru.practicum.model.comment.Comment;
+import ru.practicum.model.comment.mapper.CommentMapper;
+import ru.practicum.model.comment.CommentState;
+import ru.practicum.model.event.Event;
+import ru.practicum.model.user.User;
+import ru.practicum.repository.CommentRepository;
+import ru.practicum.repository.EventRepository;
+import ru.practicum.repository.UserRepository;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class CommentServiceImpl implements CommentService {
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+
+    @Override
+    public List<CommentDto> getComments(long userId) {
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+
+        List<Comment> comments = commentRepository.findAllByAuthor(author);
+
+        return comments.stream()
+                .map(CommentMapper::mapToCommentDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public CommentDto createComment(long userId, NewCommentDto commentDto) {
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+
+        Event event = eventRepository.findById(commentDto.event())
+                .orElseThrow(() -> new NotFoundException("Событие с id " + commentDto.event() + " не найдено"));
+
+        Comment comment = commentRepository.save(CommentMapper.mapToComment(commentDto, author, event, CommentState.WAITING));
+        return CommentMapper.mapToCommentDto(comment);
+    }
+
+    @Override
+    @Transactional
+    public CommentDto updateComment(long userId, UpdateCommentDto commentDto) {
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+
+        Comment comment = commentRepository.findById(commentDto.id())
+                .orElseThrow(() -> new NotFoundException("Комментария с id " + commentDto.id() + " не найдено"));
+
+        if (comment.getAuthor() != author) {
+            throw new AccessDeniedException("Редактировать может только автор комментария");
+        }
+        comment.setText(commentDto.text());
+        return CommentMapper.mapToCommentDto(comment);
+    }
+
+    @Override
+    @Transactional
+    public void deleteComment(long userId, long comId) {
+        Comment comment = commentRepository.findById(comId)
+                .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
+        if (comment.getAuthor().getId() == userId) {
+            commentRepository.delete(comment);
+        } else {
+            throw new AccessDeniedException("Удалять комментарий может только автор");
+        }
+    }
+}
