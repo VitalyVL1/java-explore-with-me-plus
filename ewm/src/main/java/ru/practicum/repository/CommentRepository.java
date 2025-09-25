@@ -1,27 +1,36 @@
 package ru.practicum.repository;
 
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import ru.practicum.dto.comment.StateCommentDto;
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.model.comment.Comment;
+import ru.practicum.model.comment.DateSort;
+import ru.practicum.model.comment.QComment;
 import ru.practicum.model.user.User;
 
 import java.util.List;
 
-public interface CommentRepository extends JpaRepository<Comment, Long> {
+public interface CommentRepository extends JpaRepository<Comment, Long>, QuerydslPredicateExecutor<Comment> {
     List<Comment> findAllByAuthor(User author);
 
-    @Query("SELECT NEW ru.practicum.dto.comment.StateCommentDto(" +
-            "c.id, " +
-            "c.author.name, " +
-            "c.text, " +
-            "c.state) " +
-            "FROM Comment c " +
-            "WHERE (:text IS NULL OR :text = '' OR LOWER(c.text) LIKE LOWER(CONCAT('%', :text, '%'))) " +
-            "ORDER BY " +
-            "CASE WHEN :sort = 'DESC' THEN c.created END DESC, " +
-            "CASE WHEN :sort = 'ASC' OR :sort IS NULL THEN c.created END ASC")
-    List<StateCommentDto> findCommentsWithSearchAndSort(@Param("text") String text,
-                                                        @Param("sort") String sort);
+    interface Predicate {
+        static BooleanBuilder textFilter(String text) {
+            BooleanBuilder predicate = new BooleanBuilder();
+            QComment comment = QComment.comment;
+
+            if (text != null && !text.isBlank()) {
+                String searchText = text.trim();
+                predicate.and(comment.text.lower().contains(searchText.toLowerCase()));
+            }
+
+            return predicate;
+        }
+
+        static OrderSpecifier<?> sort(DateSort sort) {
+            QComment comment = QComment.comment;
+            return (sort == DateSort.DESC) ?
+                    comment.created.desc() : comment.created.asc();
+        }
+    }
 }

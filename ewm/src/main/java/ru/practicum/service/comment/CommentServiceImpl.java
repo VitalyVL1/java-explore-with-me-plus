@@ -21,6 +21,7 @@ import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.UserRepository;
 
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -85,7 +86,11 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<StateCommentDto> getComments(String text, DateSort sort) {
-        return commentRepository.findCommentsWithSearchAndSort(text, sort.toString());
+        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.textFilter(text), CommentRepository.Predicate.sort(sort));
+        return StreamSupport.stream(comments.spliterator(), false)
+
+                .map(CommentMapper::mapToAdminDto)
+                .toList();
     }
 
     @Override
