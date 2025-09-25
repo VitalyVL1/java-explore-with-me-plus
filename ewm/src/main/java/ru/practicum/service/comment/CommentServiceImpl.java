@@ -3,12 +3,15 @@ package ru.practicum.service.comment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.dto.comment.StateCommentDto;
 import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.comment.NewCommentDto;
 import ru.practicum.dto.comment.UpdateCommentDto;
 import ru.practicum.exception.AccessDeniedException;
+import ru.practicum.exception.CommentStateException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.model.comment.Comment;
+import ru.practicum.model.comment.DateSort;
 import ru.practicum.model.comment.mapper.CommentMapper;
 import ru.practicum.model.comment.CommentState;
 import ru.practicum.model.event.Event;
@@ -78,5 +81,37 @@ public class CommentServiceImpl implements CommentService {
         } else {
             throw new AccessDeniedException("Удалять комментарий может только автор");
         }
+    }
+
+    @Override
+    public List<StateCommentDto> getComments(String text, DateSort sort) {
+        return commentRepository.findCommentsWithSearchAndSort(text, sort.toString());
+    }
+
+    @Override
+    public StateCommentDto reviewComment(long comId, boolean approved) {
+        Comment comment = commentRepository.findById(comId)
+                .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
+
+        if (!comment.getState().equals(CommentState.WAITING)) {
+            throw new CommentStateException("Подтверждение комментария может осуществляться только если статус равен WAITING");
+        }
+
+        if (approved) {
+            comment.setState(CommentState.APPROVED);
+        } else {
+            comment.setState(CommentState.REJECTED);
+        }
+
+        commentRepository.save(comment);
+
+        return CommentMapper.mapToAdminDto(comment);
+    }
+
+    @Override
+    public void deleteComment(long comId) {
+        Comment comment = commentRepository.findById(comId)
+                .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
+        commentRepository.delete(comment);
     }
 }

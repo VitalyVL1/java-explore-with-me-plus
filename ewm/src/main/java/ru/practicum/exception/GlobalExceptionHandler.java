@@ -41,6 +41,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleCommentStateException(final CommentStateException e) {
+        log.warn("400 {}", e.getMessage(), e);
+        return new ApiError("BAD_REQUEST", "Несоответствие статуса комментария", e.getMessage());
+    }
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleNotFoundException(final NotFoundException e) {
         log.warn("404 {}", e.getMessage(), e);

@@ -1,5 +1,6 @@
 package ru.practicum.model.comment.mapper;
 
+import ru.practicum.dto.comment.StateCommentDto;
 import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.comment.NewCommentDto;
 import ru.practicum.model.comment.Comment;
@@ -22,5 +23,9 @@ public class CommentMapper {
 
     public static CommentDto mapToCommentDto(Comment comment) {
         return new CommentDto(comment.getId(), comment.getAuthor().getName(), comment.getText());
+    }
+
+    public static StateCommentDto mapToAdminDto(Comment comment) {
+        return new StateCommentDto(comment.getId(), comment.getAuthor().getName(), comment.getText(), comment.getState());
     }
 }
