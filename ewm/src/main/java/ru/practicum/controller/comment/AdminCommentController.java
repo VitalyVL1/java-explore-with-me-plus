@@ -29,7 +29,7 @@ public class AdminCommentController {
     public List<StateCommentDto> getComments(
             @RequestParam(required = false) String text,
             @RequestParam(defaultValue = "ASC") DateSort sort
-            ) {
+    ) {
         log.info("Admin: Method launched (getComments(text = {}, sort = {}))", text, sort);
         return commentService.getComments(text, sort);
     }
@@ -44,7 +44,7 @@ public class AdminCommentController {
     }
 
     @DeleteMapping("/{comId}")
-    public void deleteComment( @PathVariable @Positive long comId) {
+    public void deleteComment(@PathVariable @Positive long comId) {
         log.info("Admin: Method launched (deleteComment(comId = {}))", comId);
         commentService.deleteComment(comId);
     }
