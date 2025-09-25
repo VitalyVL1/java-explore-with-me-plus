@@ -1,6 +1,7 @@
 package ru.practicum.service.comment;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.comment.StateCommentDto;
@@ -86,9 +87,8 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<StateCommentDto> getComments(String text, DateSort sort) {
-        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.textFilter(text), CommentRepository.Predicate.sort(sort));
+        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.textFilter(text), getSortDate(sort));
         return StreamSupport.stream(comments.spliterator(), false)
-
                 .map(CommentMapper::mapToAdminDto)
                 .toList();
     }
@@ -118,5 +118,10 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
         commentRepository.delete(comment);
+    }
+
+    private Sort getSortDate(DateSort sort) {
+        return (sort == DateSort.DESC) ?
+                Sort.by("created").descending() : Sort.by("created").ascending();
     }
 }

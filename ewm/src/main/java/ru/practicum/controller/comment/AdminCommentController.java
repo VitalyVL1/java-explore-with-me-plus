@@ -18,7 +18,7 @@ import ru.practicum.service.comment.CommentService;
 import java.util.List;
 
 @RestController
-@RequestMapping("admin/comments")
+@RequestMapping("/admin/comments")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

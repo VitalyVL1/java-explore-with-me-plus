@@ -1,11 +1,9 @@
 package ru.practicum.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.OrderSpecifier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import ru.practicum.model.comment.Comment;
-import ru.practicum.model.comment.DateSort;
 import ru.practicum.model.comment.QComment;
 import ru.practicum.model.user.User;
 
@@ -25,12 +23,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, Queryds
             }
 
             return predicate;
-        }
-
-        static OrderSpecifier<?> sort(DateSort sort) {
-            QComment comment = QComment.comment;
-            return (sort == DateSort.DESC) ?
-                    comment.created.desc() : comment.created.asc();
         }
     }
 }
