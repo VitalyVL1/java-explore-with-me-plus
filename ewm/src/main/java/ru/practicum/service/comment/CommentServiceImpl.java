@@ -94,6 +94,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public StateCommentDto reviewComment(long comId, boolean approved) {
         Comment comment = commentRepository.findById(comId)
                 .orElseThrow(() -> new NotFoundException("Комментария с id " + comId + " не найдено"));
@@ -107,8 +108,6 @@ public class CommentServiceImpl implements CommentService {
         } else {
             comment.setState(CommentState.REJECTED);
         }
-
-        commentRepository.save(comment);
 
         return CommentMapper.mapToAdminDto(comment);
     }
