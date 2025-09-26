@@ -73,7 +73,7 @@ public class EventServiceImpl implements EventService {
         updateEvent(event, updateRequest);
 
         setViewsAndConfirmedRequests(event);
-        return eventMapper.toFullDto(eventRepository.save(event));
+        return eventMapper.toFullDto(event);
     }
 
     @Override
@@ -174,7 +174,6 @@ public class EventServiceImpl implements EventService {
         UpdateEventUserRequest updateRequest = requestParam.request();
 
         updateEvent(event, updateRequest);
-        eventRepository.save(event);
         setViewsAndConfirmedRequests(event);
 
         return eventMapper.toFullDto(event);
@@ -218,8 +217,6 @@ public class EventServiceImpl implements EventService {
 
         if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
             requestsToUpdate.forEach(request -> request.setStatus(RequestStatus.CONFIRMED));
-            requestRepository.saveAll(requestsToUpdate);
-
             return new EventRequestStatusUpdateResult(RequestDtoMapper.mapRequestToDto(requestsToUpdate), List.of());
         }
 
@@ -237,8 +234,6 @@ public class EventServiceImpl implements EventService {
                 rejectedRequests.add(request);
             }
         }
-
-        requestRepository.saveAll(requestsToUpdate);
 
         return new EventRequestStatusUpdateResult(
                 RequestDtoMapper.mapRequestToDto(confirmedRequests),
