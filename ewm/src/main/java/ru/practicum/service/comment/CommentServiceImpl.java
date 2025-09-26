@@ -120,8 +120,25 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.delete(comment);
     }
 
+    @Override
+    public List<CommentDto> getCommentsByState(CommentState state, DateSort sort) {
+        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.stateFilter(state), getSortDate(sort));
+        return StreamSupport.stream(comments.spliterator(), false)
+                .map(CommentMapper::mapToCommentDto)
+                .toList();
+    }
+
+    @Override
+    public List<CommentDto> getCommentsByEvent(long eventId, DateSort sort) {
+        Iterable<Comment> comments = commentRepository.findAll(CommentRepository.Predicate.eventFilter(eventId), getSortDate(sort));
+        return StreamSupport.stream(comments.spliterator(), false)
+                .map(CommentMapper::mapToCommentDto)
+                .toList();
+    }
+
     private Sort getSortDate(DateSort sort) {
         return (sort == DateSort.DESC) ?
                 Sort.by("created").descending() : Sort.by("created").ascending();
     }
+
 }

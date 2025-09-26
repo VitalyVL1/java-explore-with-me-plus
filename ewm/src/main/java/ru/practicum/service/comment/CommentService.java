@@ -4,6 +4,7 @@ import ru.practicum.dto.comment.StateCommentDto;
 import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.comment.NewCommentDto;
 import ru.practicum.dto.comment.UpdateCommentDto;
+import ru.practicum.model.comment.CommentState;
 import ru.practicum.model.comment.DateSort;
 
 import java.util.List;
@@ -22,4 +23,8 @@ public interface CommentService {
     StateCommentDto reviewComment(long comId, boolean approved);
 
     void deleteComment(long comId);
+
+    List<CommentDto> getCommentsByState(CommentState state, DateSort sort);
+
+    List<CommentDto> getCommentsByEvent(long eventId, DateSort sort);
 }
