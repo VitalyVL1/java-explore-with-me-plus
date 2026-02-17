@@ -16,10 +16,36 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Репозиторий для выполнения операций с сущностью {@link Event}.
+ * <p>
+ * Предоставляет стандартные CRUD операции через наследование от {@link JpaRepository},
+ * а также методы для сложного поиска событий с динамическими фильтрами с использованием
+ * QueryDSL {@link QuerydslPredicateExecutor}. Содержит вложенный интерфейс Predicate
+ * для построения различных фильтров.
+ * </p>
+ *
+ * @see Event
+ * @see JpaRepository
+ * @see QuerydslPredicateExecutor
+ * @see QEvent
+ */
 public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPredicateExecutor<Event> {
+
+    /**
+     * Внутренний интерфейс, содержащий фабричные методы для создания предикатов QueryDSL.
+     * <p>
+     * Используется для динамического построения условий поиска событий для различных
+     * уровней доступа (административный, публичный).
+     * </p>
+     */
     interface Predicate {
+
         /**
-         * Фильтры для административного поиска событий
+         * Создает предикат для административного поиска событий.
+         *
+         * @param params параметры фильтрации (пользователи, статусы, категории, диапазон дат)
+         * @return BooleanBuilder с условиями фильтрации
          */
         static BooleanBuilder adminFilters(AdminEventParam params) {
             BooleanBuilder predicate = new BooleanBuilder();
@@ -33,12 +59,22 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
         }
 
         /**
-         * Фильтры для общедоступного поиска событий
+         * Создает предикат для публичного поиска событий.
+         *
+         * @param params параметры фильтрации (текст, категории, платность, диапазон дат, доступность)
+         * @return BooleanBuilder с условиями фильтрации
          */
         static BooleanBuilder publicFilters(EventPublicParam params) {
             return publicFilters(params, null);
         }
 
+        /**
+         * Создает предикат для публичного поиска событий с учетом доступных событий.
+         *
+         * @param params параметры фильтрации
+         * @param availableIds список ID событий с доступными местами
+         * @return BooleanBuilder с условиями фильтрации
+         */
         static BooleanBuilder publicFilters(EventPublicParam params, List<Long> availableIds) {
             BooleanBuilder predicate = new BooleanBuilder();
 
@@ -53,48 +89,48 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
         }
 
         /**
-         * Добавляет фильтр по пользователям (инициаторам событий)
+         * Добавляет фильтр по пользователям (инициаторам событий).
+         *
+         * @param predicate билдер предиката
+         * @param users множество ID пользователей
          */
-        private static void addUsersPredicate(
-                BooleanBuilder predicate,
-                Set<Long> users
-        ) {
+        private static void addUsersPredicate(BooleanBuilder predicate, Set<Long> users) {
             if (users != null && !users.isEmpty()) {
                 predicate.and(QEvent.event.initiator.id.in(users));
             }
         }
 
         /**
-         * Добавляет фильтр по множеству состояний событий
+         * Добавляет фильтр по множеству состояний событий.
+         *
+         * @param predicate билдер предиката
+         * @param states множество статусов событий
          */
-        private static void addStatesPredicate(
-                BooleanBuilder predicate,
-                Set<State> states
-        ) {
+        private static void addStatesPredicate(BooleanBuilder predicate, Set<State> states) {
             if (states != null && !states.isEmpty()) {
                 predicate.and(QEvent.event.state.in(states));
             }
         }
 
         /**
-         * Добавляет фильтр по одиночному состоянию события
+         * Добавляет фильтр по одиночному состоянию события.
+         *
+         * @param predicate билдер предиката
+         * @param state статус события
          */
-        private static void addStatePredicate(
-                BooleanBuilder predicate,
-                State state
-        ) {
+        private static void addStatePredicate(BooleanBuilder predicate, State state) {
             if (state != null) {
                 predicate.and(QEvent.event.state.eq(state));
             }
         }
 
         /**
-         * Добавляет текстовый поиск в annotation и description
+         * Добавляет текстовый поиск в аннотации и описании события.
+         *
+         * @param predicate билдер предиката
+         * @param text текст для поиска
          */
-        private static void addTextPredicate(
-                BooleanBuilder predicate,
-                String text
-        ) {
+        private static void addTextPredicate(BooleanBuilder predicate, String text) {
             if (text != null && !text.isBlank()) {
                 String pattern = "%" + text.toLowerCase() + "%";
                 predicate.and(QEvent.event.annotation.lower().like(pattern)
@@ -103,37 +139,45 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
         }
 
         /**
-         * Добавляет фильтр по категориям
+         * Добавляет фильтр по категориям.
+         *
+         * @param predicate билдер предиката
+         * @param categories множество ID категорий
          */
-        private static void addCategoriesPredicate(
-                BooleanBuilder predicate,
-                Set<Long> categories
-        ) {
+        private static void addCategoriesPredicate(BooleanBuilder predicate, Set<Long> categories) {
             if (categories != null && !categories.isEmpty()) {
                 predicate.and(QEvent.event.category.id.in(categories));
             }
         }
 
         /**
-         * Добавляет фильтр по платности события
+         * Добавляет фильтр по платности события.
+         *
+         * @param predicate билдер предиката
+         * @param paid флаг платности
          */
-        private static void addPaidPredicate(
-                BooleanBuilder predicate,
-                Boolean paid
-        ) {
+        private static void addPaidPredicate(BooleanBuilder predicate, Boolean paid) {
             if (paid != null) {
                 predicate.and(QEvent.event.paid.eq(paid));
             }
         }
 
         /**
-         * Добавляет фильтр по диапазону дат события
+         * Добавляет фильтр по диапазону дат события.
+         * <p>
+         * Если обе даты указаны - ищет события между ними.
+         * Если указано только начало - ищет события после этой даты.
+         * Если указан только конец - ищет события до этой даты.
+         * Если даты не указаны - ищет будущие события (после текущего момента).
+         * </p>
+         *
+         * @param predicate билдер предиката
+         * @param rangeStart начало диапазона
+         * @param rangeEnd конец диапазона
          */
-        private static void addDatePredicate(
-                BooleanBuilder predicate,
-                LocalDateTime rangeStart,
-                LocalDateTime rangeEnd
-        ) {
+        private static void addDatePredicate(BooleanBuilder predicate,
+                                             LocalDateTime rangeStart,
+                                             LocalDateTime rangeEnd) {
             if (rangeStart != null && rangeEnd != null) {
                 predicate.and(QEvent.event.eventDate.between(rangeStart, rangeEnd));
             } else if (rangeStart != null) {
@@ -146,26 +190,59 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
         }
 
         /**
-         * Добавляет фильтр по доступности события
+         * Добавляет фильтр по доступности события (наличие свободных мест).
+         *
+         * @param predicate билдер предиката
+         * @param onlyAvailable флаг "только доступные"
+         * @param availableIds список ID доступных событий
          */
-        private static void addOnlyAvailablePredicate(
-                BooleanBuilder predicate,
-                Boolean onlyAvailable,
-                List<Long> availableIds
-        ) {
+        private static void addOnlyAvailablePredicate(BooleanBuilder predicate,
+                                                      Boolean onlyAvailable,
+                                                      List<Long> availableIds) {
             if (onlyAvailable != null && onlyAvailable && availableIds != null && !availableIds.isEmpty()) {
                 predicate.and(QEvent.event.id.in(availableIds));
             }
         }
-
     }
 
+    /**
+     * Находит событие по его ID и статусу.
+     *
+     * @param eventId идентификатор события
+     * @param state статус события
+     * @return Optional с событием, если оно найдено и имеет указанный статус
+     */
     Optional<Event> findByIdAndState(Long eventId, State state);
 
+    /**
+     * Находит событие по его ID и ID инициатора.
+     *
+     * @param eventId идентификатор события
+     * @param userId идентификатор пользователя-инициатора
+     * @return Optional с событием, если оно найдено и принадлежит указанному пользователю
+     */
     Optional<Event> findByIdAndInitiator_Id(Long eventId, Long userId);
 
+    /**
+     * Находит все события указанного инициатора с пагинацией.
+     *
+     * @param userId идентификатор пользователя-инициатора
+     * @param pageable параметры пагинации
+     * @return список событий пользователя
+     */
     List<Event> findAllByInitiator_Id(Long userId, Pageable pageable);
 
+    /**
+     * Находит ID всех событий, у которых есть свободные места для участия.
+     * <p>
+     * Событие считается доступным, если:
+     * <ul>
+     *   <li>лимит участников равен 0 (без лимита)</li>
+     *   <li>количество подтвержденных заявок меньше лимита участников</li>
+     * </ul>
+     *
+     * @return список ID событий со свободными местами
+     */
     @Query("""
             SELECT e.id
             FROM Event e

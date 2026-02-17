@@ -33,6 +33,23 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация сервиса для управления событиями.
+ * <p>
+ * Обеспечивает бизнес-логику для операций с событиями на всех уровнях доступа:
+ * <ul>
+ *   <li>Публичный - поиск событий с фильтрацией, просмотр детальной информации</li>
+ *   <li>Пользовательский - создание, обновление, управление заявками</li>
+ *   <li>Административный - модерация, расширенный поиск</li>
+ * </ul>
+ * Взаимодействует с сервисом статистики для получения данных о просмотрах.
+ * </p>
+ *
+ * @see EventService
+ * @see EventRepository
+ * @see StatsClient
+ * @see EventMapper
+ */
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -48,6 +65,12 @@ public class EventServiceImpl implements EventService {
     private final StatsClient statsClient;
     private final EventMapper eventMapper;
 
+    /**
+     * Возвращает список событий с расширенной фильтрацией для администратора.
+     *
+     * @param params параметры фильтрации и пагинации
+     * @return список DTO событий с полной информацией
+     */
     @Override
     public List<EventFullDto> findAllAdmin(AdminEventParam params) {
         int from = params.from();
@@ -64,11 +87,20 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
+    /**
+     * Обновляет событие администратором (модерация).
+     *
+     * @param id идентификатор события
+     * @param updateRequest DTO с данными для обновления и действием
+     * @return DTO обновленного события
+     * @throws NotFoundException если событие не найдено
+     * @throws ConditionsNotMetException если событие не может быть обновлено в текущем статусе
+     */
     @Override
     @Transactional
     public EventFullDto updateAdminEvent(long id, UpdateEventAdminRequest updateRequest) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Событие с id " + id + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Событие с id " + id + " не найдено"));
 
         updateEvent(event, updateRequest);
 
@@ -76,6 +108,12 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
+    /**
+     * Возвращает список событий для публичного доступа с фильтрацией и сортировкой.
+     *
+     * @param params параметры фильтрации, сортировки и пагинации
+     * @return список DTO событий с краткой информацией
+     */
     @Override
     public List<EventShortDto> findPublicEvents(EventPublicParam params) {
         int from = params.from();
@@ -108,16 +146,31 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Возвращает детальную информацию о событии по его идентификатору для публичного доступа.
+     *
+     * @param eventId идентификатор события
+     * @return DTO события с полной информацией
+     * @throws NotFoundException если событие не найдено или не опубликовано
+     */
     @Override
     public EventFullDto findPublicEventById(Long eventId) {
         Event event = eventRepository.findByIdAndState(eventId, State.PUBLISHED)
                 .orElseThrow(
-                        () -> new NotFoundException(String.format("Event with id %d not found", eventId))
+                        () -> new NotFoundException(String.format("Событие с id %d не найдено", eventId))
                 );
         setViewsAndConfirmedRequests(event);
         return eventMapper.toFullDto(event);
     }
 
+    /**
+     * Возвращает список событий, созданных указанным пользователем.
+     *
+     * @param userId идентификатор пользователя
+     * @param params параметры пагинации
+     * @return список DTO событий с краткой информацией
+     * @throws NotFoundException если пользователь не найден
+     */
     @Override
     public List<EventShortDto> findUserEvents(Long userId, EventPrivateParam params) {
         int from = params.from();
@@ -125,7 +178,7 @@ public class EventServiceImpl implements EventService {
         Sort defaultSort = Sort.by("id").descending();
 
         if (!userRepository.existsById(userId)) {
-            throw new NotFoundException(String.format("User with id %d not found", userId));
+            throw new NotFoundException(String.format("Пользователь с id %d не найден", userId));
         }
         Pageable pageable = new OffsetBasedPageable(from, size, defaultSort);
         List<Event> events = eventRepository.findAllByInitiator_Id(userId, pageable);
@@ -137,37 +190,61 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
-    @Transactional
+    /**
+     * Создает новое событие от имени пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @param dto DTO с данными нового события
+     * @return DTO созданного события
+     * @throws NotFoundException если пользователь или категория не найдены
+     */
     @Override
+    @Transactional
     public EventFullDto createEvent(Long userId, NewEventDto dto) {
         User user = userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException(String.format("User with id %d not found", userId)));
+                () -> new NotFoundException(String.format("Пользователь с id %d не найден", userId)));
 
         Category category = categoryRepository.findById(dto.category()).orElseThrow(
-                () -> new NotFoundException(String.format("Category with id %d not found", dto.category())));
+                () -> new NotFoundException(String.format("Категория с id %d не найдена", dto.category())));
 
         Event event = eventRepository.save(eventMapper.toEntity(dto, user, category));
 
         return eventMapper.toFullDto(event);
     }
 
+    /**
+     * Возвращает детальную информацию о конкретном событии пользователя.
+     *
+     * @param eventId идентификатор события
+     * @param userId идентификатор пользователя
+     * @return DTO события с полной информацией
+     * @throws NotFoundException если событие не найдено или не принадлежит пользователю
+     */
     @Override
     public EventFullDto findUserEventById(Long eventId, Long userId) {
         Event event = eventRepository.findByIdAndInitiator_Id(eventId, userId).orElseThrow(
-                () -> new NotFoundException(String.format("Event with id %d by user %d not found", eventId, userId))
+                () -> new NotFoundException(String.format("Событие с id %d у пользователя %d не найдено", eventId, userId))
         );
         setViewsAndConfirmedRequests(event);
         return eventMapper.toFullDto(event);
     }
 
-    @Transactional
+    /**
+     * Обновляет событие пользователя.
+     *
+     * @param requestParam составной параметр с идентификаторами и DTO обновления
+     * @return DTO обновленного события
+     * @throws NotFoundException если событие не найдено или не принадлежит пользователю
+     * @throws ConditionsNotMetException если событие не может быть обновлено
+     */
     @Override
+    @Transactional
     public EventFullDto updateUserEvent(UpdateEventUserRequestParam requestParam) {
         Event event = eventRepository.findByIdAndInitiator_Id(requestParam.eventId(), requestParam.userId())
                 .orElseThrow(
                         () -> new NotFoundException(
                                 String.format(
-                                        "Event with id %d by user %d not found",
+                                        "Событие с id %d у пользователя %d не найдено",
                                         requestParam.eventId(),
                                         requestParam.userId())));
 
@@ -179,6 +256,14 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
+    /**
+     * Возвращает список заявок на участие в событии пользователя.
+     *
+     * @param eventId идентификатор события
+     * @param userId идентификатор пользователя
+     * @return список DTO заявок на участие
+     * @throws NotFoundException если событие не найдено или не принадлежит пользователю
+     */
     @Override
     public List<ParticipationRequestDto> findEventRequests(Long eventId, Long userId) {
         List<Request> requests =
@@ -186,15 +271,23 @@ public class EventServiceImpl implements EventService {
         return RequestDtoMapper.mapRequestToDto(requests);
     }
 
-    @Transactional
+    /**
+     * Обновляет статусы заявок на участие в событии.
+     *
+     * @param requestParam составной параметр с идентификаторами и запросом на обновление
+     * @return результат обновления с подтвержденными и отклоненными заявками
+     * @throws NotFoundException если событие не найдено или не принадлежит пользователю
+     * @throws ConditionsNotMetException если достигнут лимит участников или заявки в некорректном статусе
+     */
     @Override
+    @Transactional
     public EventRequestStatusUpdateResult updateRequestStatus(EventRequestStatusUpdateRequestParam requestParam) {
         EventRequestStatusUpdateRequest updateRequest = requestParam.updateRequest();
         Event event = eventRepository.findByIdAndInitiator_Id(requestParam.eventId(), requestParam.userId())
                 .orElseThrow(
                         () -> new NotFoundException(
                                 String.format(
-                                        "Event with id %d by user %d not found",
+                                        "Событие с id %d у пользователя %d не найдено",
                                         requestParam.eventId(),
                                         requestParam.userId())));
 
@@ -241,6 +334,12 @@ public class EventServiceImpl implements EventService {
         );
     }
 
+    /**
+     * Получает карту просмотров для списка событий.
+     *
+     * @param eventIds список идентификаторов событий
+     * @return Map, где ключ - ID события, значение - количество просмотров
+     */
     private Map<Long, Long> getViewsForEvents(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
             return Collections.emptyMap();
@@ -260,6 +359,12 @@ public class EventServiceImpl implements EventService {
                 ));
     }
 
+    /**
+     * Извлекает идентификатор события из URI.
+     *
+     * @param uri URI вида "/events/{id}"
+     * @return идентификатор события или -1 в случае ошибки
+     */
     private Long extractEventIdFromUri(String uri) {
         try {
             return Long.parseLong(uri.replace("/events/", ""));
@@ -268,6 +373,12 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /**
+     * Получает количество просмотров для одного события.
+     *
+     * @param eventId идентификатор события
+     * @return количество просмотров
+     */
     private Long getViews(Long eventId) {
         List<String> uris = List.of("/events/" + eventId);
         Long views = 0L;
@@ -281,6 +392,12 @@ public class EventServiceImpl implements EventService {
         return views;
     }
 
+    /**
+     * Получает количество подтвержденных заявок для одного события.
+     *
+     * @param eventId идентификатор события
+     * @return количество подтвержденных заявок
+     */
     private Long getConfirmedRequests(Long eventId) {
         if (eventId == null) {
             return 0L;
@@ -289,6 +406,12 @@ public class EventServiceImpl implements EventService {
                 .countByEventAndStatus(eventId, RequestStatus.CONFIRMED);
     }
 
+    /**
+     * Получает карту подтвержденных заявок для списка событий.
+     *
+     * @param eventIds список идентификаторов событий
+     * @return Map, где ключ - ID события, значение - количество подтвержденных заявок
+     */
     private Map<Long, Long> getConfirmedRequestsForEvents(List<Long> eventIds) {
         try {
             return requestRepository.countConfirmedRequestsByEventIds(eventIds).stream()
@@ -301,6 +424,13 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /**
+     * Создает DTO для запроса статистики.
+     *
+     * @param uris список URI
+     * @param unique флаг уникальных просмотров
+     * @return DTO запроса статистики
+     */
     private RequestStatsDto createRequestStatsDto(List<String> uris, boolean unique) {
         return new RequestStatsDto(
                 START_DATE_FOR_STAT_REQUEST,
@@ -310,11 +440,21 @@ public class EventServiceImpl implements EventService {
         );
     }
 
+    /**
+     * Устанавливает просмотры и подтвержденные заявки для одного события.
+     *
+     * @param event событие
+     */
     private void setViewsAndConfirmedRequests(Event event) {
         setViews(event);
         setConfirmedRequests(event);
     }
 
+    /**
+     * Устанавливает просмотры и подтвержденные заявки для списка событий.
+     *
+     * @param events список событий
+     */
     private void setViewsAndConfirmedRequests(List<Event> events) {
         if (events == null || events.isEmpty()) {
             return;
@@ -333,14 +473,32 @@ public class EventServiceImpl implements EventService {
         });
     }
 
+    /**
+     * Устанавливает просмотры для одного события.
+     *
+     * @param event событие
+     */
     private void setViews(Event event) {
         event.setViews(getViews(event.getId()));
     }
 
+    /**
+     * Устанавливает подтвержденные заявки для одного события.
+     *
+     * @param event событие
+     */
     private void setConfirmedRequests(Event event) {
         event.setConfirmedRequests(getConfirmedRequests(event.getId()));
     }
 
+    /**
+     * Обновляет событие данными от пользователя.
+     *
+     * @param event событие для обновления
+     * @param updateRequest DTO с обновленными данными
+     * @throws ConditionsNotMetException если событие не может быть обновлено
+     * @throws NotFoundException если категория не найдена
+     */
     private void updateEvent(Event event, UpdateEventUserRequest updateRequest) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -368,7 +526,7 @@ public class EventServiceImpl implements EventService {
         Optional.ofNullable(updateRequest.category()).ifPresent(
                 categoryId -> event.setCategory(categoryRepository.findById(categoryId)
                         .orElseThrow(
-                                () -> new NotFoundException("Category id " + categoryId + " not found")
+                                () -> new NotFoundException("Категория с id " + categoryId + " не найдена")
                         ))
         );
 
@@ -380,6 +538,14 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /**
+     * Обновляет событие данными от администратора (модерация).
+     *
+     * @param event событие для обновления
+     * @param updateRequest DTO с обновленными данными и действием
+     * @throws ConditionsNotMetException если событие не может быть опубликовано/отклонено
+     * @throws NotFoundException если категория не найдена
+     */
     private void updateEvent(Event event, UpdateEventAdminRequest updateRequest) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -409,7 +575,7 @@ public class EventServiceImpl implements EventService {
         Optional.ofNullable(updateRequest.category()).ifPresent(
                 categoryId -> event.setCategory(categoryRepository.findById(categoryId)
                         .orElseThrow(
-                                () -> new NotFoundException("Category id " + categoryId + " not found")
+                                () -> new NotFoundException("Категория с id " + categoryId + " не найдена")
                         ))
         );
 
@@ -424,6 +590,12 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /**
+     * Создает компаратор для сортировки событий в публичном доступе.
+     *
+     * @param sort тип сортировки
+     * @return компаратор для EventShortDto
+     */
     private Comparator<EventShortDto> createEventShortDtoComparator(EventSort sort) {
         Comparator<EventShortDto> comparator;
 
