@@ -13,6 +13,31 @@ import java.time.LocalDateTime;
 
 import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
 
+/**
+ * DTO (Data Transfer Object) для полного представления события.
+ * <p>
+ * Используется для передачи детальной информации о событии клиенту.
+ * Содержит все поля события, включая информацию о категории, инициаторе,
+ * местоположении, статусе, количестве подтвержденных запросов и просмотров.
+ * </p>
+ *
+ * @param id уникальный идентификатор события
+ * @param annotation краткое описание события
+ * @param category категория события
+ * @param confirmedRequests количество подтвержденных запросов на участие
+ * @param createdOn дата и время создания события
+ * @param description полное описание события
+ * @param eventDate дата и время проведения события
+ * @param initiator инициатор события
+ * @param location местоположение события
+ * @param paid флаг платности события
+ * @param participantLimit лимит участников (0 - без лимита)
+ * @param publishedOn дата и время публикации события
+ * @param requestModeration флаг необходимости модерации заявок
+ * @param state статус события
+ * @param title заголовок события
+ * @param views количество просмотров события
+ */
 public record EventFullDto(
         Long id,
 
@@ -56,6 +81,10 @@ public record EventFullDto(
 
         Long views
 ) {
+    /**
+     * Конструктор с поддержкой паттерна Builder от Lombok.
+     * Позволяет создавать объекты с использованием toBuilder().
+     */
     @Builder(toBuilder = true)
     public EventFullDto {
     }

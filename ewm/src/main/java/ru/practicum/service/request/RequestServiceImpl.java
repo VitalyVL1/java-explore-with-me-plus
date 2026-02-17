@@ -19,6 +19,18 @@ import ru.practicum.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Реализация сервиса для управления заявками на участие в событиях.
+ * <p>
+ * Обеспечивает бизнес-логику для операций с заявками: создание, отмена,
+ * получение списка заявок пользователя. Содержит валидацию правил создания заявок:
+ * проверка статуса события, лимита участников, дублирования заявок и т.д.
+ * </p>
+ *
+ * @see RequestService
+ * @see RequestRepository
+ * @see RequestDtoMapper
+ */
 @Service
 @AllArgsConstructor
 public class RequestServiceImpl implements RequestService {
@@ -26,6 +38,13 @@ public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
     private final EventRepository eventRepository;
 
+    /**
+     * Возвращает список всех заявок на участие указанного пользователя.
+     *
+     * @param userId идентификатор пользователя
+     * @return список DTO заявок на участие
+     * @throws NotFoundException если пользователь не найден
+     */
     @Override
     public List<ParticipationRequestDto> getUserRequests(long userId) {
         User user = getUserById(userId);
@@ -35,6 +54,25 @@ public class RequestServiceImpl implements RequestService {
                 .toList();
     }
 
+    /**
+     * Создает новую заявку на участие в событии.
+     * <p>
+     * Выполняет комплексную валидацию:
+     * <ul>
+     *   <li>Пользователь не может подать заявку на свое событие</li>
+     *   <li>Событие должно быть опубликовано</li>
+     *   <li>Заявка не должна дублироваться</li>
+     *   <li>Не должен быть превышен лимит участников</li>
+     * </ul>
+     * Статус заявки зависит от настроек модерации события.
+     * </p>
+     *
+     * @param userId идентификатор пользователя, подающего заявку
+     * @param eventId идентификатор события
+     * @return DTO созданной заявки
+     * @throws NotFoundException если пользователь или событие не найдены
+     * @throws AlreadyExistsException если нарушены правила создания заявки
+     */
     @Override
     public ParticipationRequestDto createRequest(long userId, long eventId) {
         User user = getUserById(userId);
@@ -50,6 +88,20 @@ public class RequestServiceImpl implements RequestService {
                 .build()));
     }
 
+    /**
+     * Отменяет заявку на участие.
+     * <p>
+     * Проверяет, что пользователь является владельцем заявки и что статус заявки
+     * позволяет выполнить отмену (не CANCELED и не REJECTED).
+     * </p>
+     *
+     * @param userId идентификатор пользователя
+     * @param requestId идентификатор заявки
+     * @return DTO отмененной заявки
+     * @throws NotFoundException если пользователь или заявка не найдены
+     * @throws ValidationException если пользователь не является владельцем заявки
+     *         или статус заявки не позволяет отмену
+     */
     @Override
     public ParticipationRequestDto cancelRequest(long userId, long requestId) {
         User user = getUserById(userId);
@@ -68,21 +120,49 @@ public class RequestServiceImpl implements RequestService {
         return RequestDtoMapper.mapRequestToDto(requestRepository.save(request));
     }
 
+    /**
+     * Получает пользователя по идентификатору.
+     *
+     * @param userId идентификатор пользователя
+     * @return сущность User
+     * @throws NotFoundException если пользователь не найден
+     */
     private User getUserById(long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User " + userId + " not found!"));
+        return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
     }
 
+    /**
+     * Получает заявку по идентификатору.
+     *
+     * @param requestId идентификатор заявки
+     * @return сущность Request
+     * @throws NotFoundException если заявка не найдена
+     */
     private Request getRequestById(long requestId) {
-        return requestRepository.findById(requestId).orElseThrow(() -> new NotFoundException("Request " + requestId + " not found!"));
+        return requestRepository.findById(requestId).orElseThrow(() -> new NotFoundException("Заявка с id " + requestId + " не найдена"));
     }
 
+    /**
+     * Получает событие по идентификатору.
+     *
+     * @param eventId идентификатор события
+     * @return сущность Event
+     * @throws NotFoundException если событие не найдено
+     */
     private Event getEventById(long eventId) {
-        return eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event " + eventId + " not found!"));
+        return eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
     }
 
+    /**
+     * Выполняет валидацию перед созданием заявки.
+     *
+     * @param user пользователь, подающий заявку
+     * @param event событие, на которое подается заявка
+     * @throws AlreadyExistsException если нарушено одно из правил создания заявки
+     */
     private void validateCreation(User user, Event event) {
         if (user.getId() == event.getInitiator().getId()) {
-            throw new AlreadyExistsException("Пользователя " + user.getId() + " не может добавить запрос на участие в своем событии " + event.getId());
+            throw new AlreadyExistsException("Пользователь не может подать запрос на участие в своем событии");
         }
 
         if (!State.PUBLISHED.equals(event.getState())) {
@@ -90,11 +170,12 @@ public class RequestServiceImpl implements RequestService {
         }
 
         if (requestRepository.findByUserAndEvent(user.getId(), event.getId()).isPresent()) {
-            throw new AlreadyExistsException("Для пользователя " + user.getId() + " уже существует запрос на участие в событие " + event.getId());
+            throw new AlreadyExistsException("Запрос на участие в этом событии уже существует");
         }
 
-        if (event.getParticipantLimit() != 0 && requestRepository.countByEventAndStatus(event.getId(), RequestStatus.CONFIRMED) >= event.getParticipantLimit()) {
-            throw new AlreadyExistsException("Достигнут лимит запросов на участие " + event.getId());
+        if (event.getParticipantLimit() != 0 &&
+            requestRepository.countByEventAndStatus(event.getId(), RequestStatus.CONFIRMED) >= event.getParticipantLimit()) {
+            throw new AlreadyExistsException("Достигнут лимит запросов на участие в событии");
         }
     }
 }

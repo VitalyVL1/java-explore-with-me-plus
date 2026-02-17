@@ -16,6 +16,18 @@ import ru.practicum.service.StatsService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * REST-контроллер для сервиса статистики.
+ * <p>
+ * Предоставляет endpoints для сохранения информации о запросах к эндпоинтам (хитах)
+ * и получения агрегированной статистики по посещениям за указанный период.
+ * </p>
+ *
+ * @see StatsService
+ * @see HitCreateDto
+ * @see RequestStatsDto
+ * @see ResponseStatsDto
+ */
 @RestController
 @RequestMapping
 @RequiredArgsConstructor
@@ -25,6 +37,15 @@ public class StatsController {
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     private final StatsService statsService;
 
+    /**
+     * Сохраняет информацию о запросе к эндпоинту (хит).
+     * <p>
+     * Принимает данные о посещении: приложение, URI, IP-адрес и временную метку.
+     * Сохраняет эту информацию для последующего сбора статистики.
+     * </p>
+     *
+     * @param createDto DTO с данными о запросе
+     */
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
     public void saveHit(
@@ -34,6 +55,20 @@ public class StatsController {
         statsService.saveHit(createDto);
     }
 
+    /**
+     * Возвращает статистику по посещениям за указанный период.
+     * <p>
+     * Позволяет получить агрегированные данные о количестве просмотров
+     * с фильтрацией по списку URI и выбором режима уникальности (по IP).
+     * </p>
+     *
+     * @param start начало периода (обязательный параметр)
+     * @param end конец периода (обязательный параметр, должен быть позже start)
+     * @param uris список URI для фильтрации (опционально)
+     * @param unique режим уникальности: true - только уникальные IP, false - все просмотры
+     * @return список DTO с данными статистики (app, uri, hits)
+     * @throws ValidationException если end не позже start
+     */
     @GetMapping("/stats")
     @ResponseStatus(HttpStatus.OK)
     public List<ResponseStatsDto> getStats(

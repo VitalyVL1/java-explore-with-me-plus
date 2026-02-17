@@ -11,6 +11,22 @@ import java.util.Set;
 
 import static ru.practicum.util.DateTimeFormat.DATE_TIME_PATTERN;
 
+/**
+ * DTO (Data Transfer Object) для параметров расширенного поиска событий администратором.
+ * <p>
+ * Используется для передачи параметров фильтрации, пагинации и валидации
+ * при запросе списка событий администратором. Содержит значения по умолчанию
+ * для параметров пагинации и встроенную валидацию диапазона дат.
+ * </p>
+ *
+ * @param users множество идентификаторов пользователей-инициаторов событий
+ * @param states множество статусов событий для фильтрации
+ * @param categories множество идентификаторов категорий
+ * @param rangeStart начало диапазона дат событий
+ * @param rangeEnd конец диапазона дат событий
+ * @param from количество элементов для пропуска (пагинация)
+ * @param size количество элементов на странице (пагинация)
+ */
 public record AdminEventParam(
         Set<Long> users,
         Set<State> states,
@@ -28,11 +44,23 @@ public record AdminEventParam(
         @Positive(message = "Параметр size должен быть больше нуля")
         Integer size
 ) {
+    /**
+     * Конструктор с параметрами по умолчанию для пагинации.
+     * Устанавливает значения from=0 и size=10, если они не были переданы.
+     */
     public AdminEventParam {
         from = from != null ? from : 0;
         size = size != null ? size : 10;
     }
 
+    /**
+     * Валидирует корректность диапазона дат.
+     * <p>
+     * Проверяет, что если указаны обе даты, то rangeEnd следует после rangeStart.
+     * </p>
+     *
+     * @return true если диапазон дат корректен или одна из дат не указана
+     */
     @AssertTrue(message = "rangeEnd должен быть после rangeStart")
     public boolean isRangeValid() {
         return rangeStart == null || rangeEnd == null || rangeEnd.isAfter(rangeStart);
